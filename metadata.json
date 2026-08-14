@@ -1,0 +1,6 @@
+{
+  "name": "L'Œil de l'Atelier",
+  "description": "Un assistant d'intelligence artificielle et d'histoire de l'art sur-mesure pour accompagner les artistes dans leur création, leur curation, leur communication et l'analyse de leurs œuvres.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
