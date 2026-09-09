@@ -1,6 +1,6 @@
 {
   "name": "L'Œil de l'Atelier",
-  "description": "Un assistant d'intelligence artificielle et d'histoire de l'art sur-mesure pour accompagner les artistes dans leur création, leur curation, leur communication et l'analyse de leurs œuvres.",
+  "description": "La passerelle d'intelligence artificielle entre artistes, galeries et collectionneurs : curation plastique, organisation de vernissages, estimation de marché, certificats COA et valorisation d'œuvres.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

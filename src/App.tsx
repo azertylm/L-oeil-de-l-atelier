@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Sparkles, BookOpen, Trash2, ArrowLeft, Paintbrush, HelpCircle, 
   AlertTriangle, Plus, FolderPlus, Heart, Check, X, Calendar, Eye, 
-  Layers, FileText, RefreshCw, Loader2 
+  Layers, FileText, RefreshCw, Loader2, Crown, Lock 
 } from "lucide-react";
 import { ArtistProfile, HistoryItem, CustomArtwork } from "./types.js";
 import { TOOLS } from "./data.js";
@@ -19,6 +19,12 @@ import HistoryModal from "./components/HistoryModal.js";
 import ResultsPanel from "./components/ResultsPanel.js";
 import ToolsBar from "./components/ToolsBar.js";
 import DonationModal from "./components/DonationModal.js";
+import SubscriptionModal from "./components/SubscriptionModal.js";
+import GalleryBridgeModal from "./components/GalleryBridgeModal.js";
+import VernissageEventModal from "./components/VernissageEventModal.js";
+import CollectorSalesModal from "./components/CollectorSalesModal.js";
+import PressSocialBridgeModal from "./components/PressSocialBridgeModal.js";
+import ArtworkToolsModal from "./components/ArtworkToolsModal.js";
 
 const DEFAULT_PROFILE: ArtistProfile = {
   name: "",
@@ -87,6 +93,32 @@ function readFileAsBase64(file: File): Promise<string> {
   });
 }
 
+// Helper to safely parse API responses and handle HTML error pages gracefully
+async function parseApiResponse(response: Response, defaultErrMsg = "Erreur lors de la communication avec l'IA.") {
+  const rawText = await response.text();
+  let data: any = null;
+  try {
+    data = JSON.parse(rawText);
+  } catch (parseError) {
+    if (response.status === 413) {
+      throw new Error("Le volume d'images transmis est trop volumineux pour le serveur. Veuillez sélectionner moins d'images simultanément.");
+    }
+    if (response.status === 503 || response.status === 502 || response.status === 504) {
+      throw new Error("Les serveurs d'analyse IA sont actuellement très sollicités ou en cours de réinitialisation. Veuillez réessayer dans quelques instants.");
+    }
+    if (!response.ok) {
+      throw new Error(`Service d'analyse momentanément indisponible (Code HTTP ${response.status}). Veuillez réessayer.`);
+    }
+    throw new Error(defaultErrMsg);
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || defaultErrMsg);
+  }
+
+  return data;
+}
+
 export default function App() {
   // Session States
   const [file, setFile] = useState<File | null>(null);
@@ -105,6 +137,16 @@ export default function App() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
   const [isDonationOpen, setIsDonationOpen] = useState<boolean>(false);
+  
+  // Subscription & Pro States (3 € / mois ou 20 € / an)
+  const [isSubscriptionActive, setIsSubscriptionActive] = useState<boolean>(false);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState<boolean>(false);
+  const [isArtworkToolsModalOpen, setIsArtworkToolsModalOpen] = useState<boolean>(false);
+  const [isGalleryBridgeOpen, setIsGalleryBridgeOpen] = useState<boolean>(false);
+  const [isVernissageModalOpen, setIsVernissageModalOpen] = useState<boolean>(false);
+  const [isCollectorSalesOpen, setIsCollectorSalesOpen] = useState<boolean>(false);
+  const [isPressSocialOpen, setIsPressSocialOpen] = useState<boolean>(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; currentToolName: string } | null>(null);
 
   // Gallery States
   const [customArtworks, setCustomArtworks] = useState<CustomArtwork[]>([]);
@@ -155,6 +197,11 @@ export default function App() {
     const savedTheme = localStorage.getItem("oeilAtelier_theme");
     if (savedTheme === "dark-gold" || savedTheme === "light") {
       setTheme(savedTheme);
+    }
+
+    const savedSubscription = localStorage.getItem("oeilAtelier_subscriptionActive");
+    if (savedSubscription === "true") {
+      setIsSubscriptionActive(true);
     }
   }, []);
 
@@ -284,33 +331,38 @@ export default function App() {
         setActiveToolId("style");
         setCache({});
 
-        // Automatically run initial global analysis for the whole series!
+        // Automatically run initial global analysis for the whole series
         setIsLoading(true);
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json"
-        };
-        if (customApiKey) {
-          headers["x-goog-api-key"] = customApiKey;
-          headers["x-gemini-api-key"] = customApiKey;
-        }
-        
-        const response = await fetch("/api/analyze", {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify({
-            images: importedArtworks.map(art => art.imageSrc),
-            image: firstArt.imageSrc,
-            mimeType: "image/jpeg",
-            toolId: "style",
-            artistProfile: profile
-          })
-        });
+        try {
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json"
+          };
+          if (customApiKey) {
+            headers["x-goog-api-key"] = customApiKey;
+            headers["x-gemini-api-key"] = customApiKey;
+          }
+          
+          // Limit series sample to first 6 artworks to optimize payload and avoid network timeouts
+          const seriesSample = importedArtworks.slice(0, 6).map(art => art.imageSrc);
 
-        const data = await response.json();
-        if (response.ok) {
+          const response = await fetch("/api/analyze", {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({
+              images: seriesSample,
+              image: firstArt.imageSrc,
+              mimeType: "image/jpeg",
+              toolId: "style",
+              artistProfile: profile
+            })
+          });
+
+          const data = await parseApiResponse(response, "Erreur lors de l'analyse automatique initiale de la série.");
           setCache({ style: data });
-        } else {
-          throw new Error(data.error?.message || "Erreur lors de l'analyse automatique.");
+        } catch (autoErr: any) {
+          console.warn("Initial series auto-analysis note:", autoErr);
+          // Don't fail the whole batch import if the optional auto-analysis encountered a quota/delay
+          setError(`Importation réussie de ${importedArtworks.length} œuvre(s) ! Note : ${autoErr.message || "L'analyse automatique initiale n'a pas pu démarrer, vous pouvez cliquer sur « Analyser » ci-dessous."}`);
         }
       }
     } catch (err: any) {
@@ -390,15 +442,11 @@ export default function App() {
         })
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        setCache({ style: data });
-      } else {
-        throw new Error(data.error?.message || "Erreur lors de l'analyse automatique.");
-      }
+      const data = await parseApiResponse(response, "Erreur lors de l'analyse automatique initiale.");
+      setCache({ style: data });
     } catch (err: any) {
       console.error("Auto analysis failed on select:", err);
-      setError(`L'œuvre d'art a été chargée, mais l'analyse initiale a échoué : ${err.message}`);
+      setError(`L'œuvre d'art a été chargée, mais l'analyse initiale a rencontré un problème : ${err.message}`);
     } finally {
       setIsPresetLoading(false);
       setIsLoading(false);
@@ -587,11 +635,7 @@ export default function App() {
         })
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || "Une erreur inconnue s'est produite.");
-      }
+      const data = await parseApiResponse(response, "Une erreur s'est produite lors de l'analyse.");
 
       // 1. Save results to Session Cache
       setCache((prev) => ({ ...prev, [toolIdToRun]: data }));
@@ -704,6 +748,88 @@ export default function App() {
     }
   };
 
+  // Handler: Subscription Activation
+  const handleSubscribe = (plan: "monthly" | "yearly" | "gift", codeUsed?: string) => {
+    setIsSubscriptionActive(true);
+    localStorage.setItem("oeilAtelier_subscriptionActive", "true");
+    localStorage.setItem("oeilAtelier_subscriptionPlan", plan);
+    if (codeUsed) {
+      localStorage.setItem("oeilAtelier_giftCode", codeUsed);
+    }
+  };
+
+  // Handler: Cancel Subscription (for testing)
+  const handleCancelSubscription = () => {
+    setIsSubscriptionActive(false);
+    localStorage.removeItem("oeilAtelier_subscriptionActive");
+    localStorage.removeItem("oeilAtelier_subscriptionPlan");
+    localStorage.removeItem("oeilAtelier_giftCode");
+  };
+
+  // Handler: Run all 16 analyses in batch (Subscription Pro Feature)
+  const handleRunAllAnalyses = async () => {
+    if (!isSubscriptionActive) {
+      setIsSubscriptionModalOpen(true);
+      return;
+    }
+
+    if (!imageBase64 || isLoading || batchProgress) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json"
+    };
+    if (customApiKey) {
+      headers["x-goog-api-key"] = customApiKey;
+      headers["x-gemini-api-key"] = customApiKey;
+    }
+
+    try {
+      const toolsToRun = [...TOOLS];
+      for (let i = 0; i < toolsToRun.length; i++) {
+        const currentTool = toolsToRun[i];
+        setBatchProgress({
+          current: i + 1,
+          total: toolsToRun.length,
+          currentToolName: `Analyse ${i + 1}/16 : « ${currentTool.label} »`
+        });
+
+        // If we already have cache for this tool, we still run it or reuse
+        try {
+          const response = await fetch("/api/analyze", {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({
+              image: imageBase64,
+              images: activeSeries.length > 1 ? activeSeries.map(item => item.imageSrc) : undefined,
+              mimeType: file ? file.type : "image/jpeg",
+              toolId: currentTool.id,
+              artistProfile: profile
+            })
+          });
+
+          const data = await parseApiResponse(response, `Erreur lors de l'analyse ${currentTool.label}`);
+          if (data) {
+            setCache(prev => ({ ...prev, [currentTool.id]: data }));
+          }
+        } catch (toolErr) {
+          console.warn(`Error analyzing tool ${currentTool.id}:`, toolErr);
+        }
+
+        // Brief delay between calls for visual feedback
+        await new Promise(r => setTimeout(r, 120));
+      }
+    } catch (err: any) {
+      console.error("Batch all analysis error:", err);
+      setError("Une erreur est survenue lors de l'exécution complète du diagnostic.");
+    } finally {
+      setBatchProgress(null);
+      setIsLoading(false);
+    }
+  };
+
   // Handler: Select a Tool
   const handleSelectTool = async (toolId: string) => {
     setActiveToolId(toolId);
@@ -714,9 +840,211 @@ export default function App() {
     }
   };
 
-  // Handler: Force manual retry / rerun
+  // Handler: Select a Tool from Top Hub or Top Navigation
+  const handleSelectToolFromTop = async (toolId: string) => {
+    setActiveToolId(toolId);
+    setError(null);
+    if (previewUrl && imageBase64) {
+      if (!cache[toolId]) {
+        await executeAnalysis(toolId);
+      }
+      setTimeout(() => {
+        const el = document.getElementById("results-panel-container") || document.getElementById("main-workspace-anchor");
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 80);
+    } else {
+      setTimeout(() => {
+        const uploadEl = document.getElementById("artwork-selector-section");
+        if (uploadEl) {
+          uploadEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 80);
+    }
+  };
+
+  // Handler: Force manual retry / rerun of ANY tool
   const handleRerun = async () => {
     await executeAnalysis(activeToolId);
+  };
+
+  // Handler: Rerun a specific tool regardless of active tool
+  const handleRerunTool = async (toolId: string) => {
+    setActiveToolId(toolId);
+    await executeAnalysis(toolId);
+  };
+
+  // Handler: Execute one of the 5 Gallery Bridge Tools
+  const handleAnalyzeGalleryTool = async (toolId: string) => {
+    try {
+      let imgToSend = imageBase64;
+      if (!imgToSend && PRESET_ARTWORKS.length > 0) {
+        try {
+          imgToSend = await getArtworkBase64(PRESET_ARTWORKS[0]);
+        } catch (e) {
+          console.warn("Could not load preset image for gallery tool, sending transparent fallback:", e);
+        }
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+      if (customApiKey) {
+        headers["x-custom-api-key"] = customApiKey;
+      }
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          toolId: toolId,
+          artistProfile: profile,
+          seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
+            title: a.title,
+            artist: a.artist,
+            medium: a.medium,
+            year: a.year
+          })) : undefined
+        })
+      });
+
+      const data = await parseApiResponse(response, "Erreur lors de l'exécution de l'analyse galerie.");
+      return data;
+    } catch (err: any) {
+      console.error("Gallery tool execution error:", err);
+      throw err;
+    }
+  };
+
+  // Handler: Execute one of the 5 Vernissage & Exhibition Tools
+  const handleAnalyzeVernissageTool = async (toolId: string) => {
+    try {
+      let imgToSend = imageBase64;
+      if (!imgToSend && PRESET_ARTWORKS.length > 0) {
+        try {
+          imgToSend = await getArtworkBase64(PRESET_ARTWORKS[0]);
+        } catch (e) {
+          console.warn("Could not load preset image for vernissage tool:", e);
+        }
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+      if (customApiKey) {
+        headers["x-custom-api-key"] = customApiKey;
+      }
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          toolId: toolId,
+          artistProfile: profile,
+          seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
+            title: a.title,
+            artist: a.artist,
+            medium: a.medium,
+            year: a.year
+          })) : undefined
+        })
+      });
+
+      const data = await parseApiResponse(response, "Erreur lors de l'exécution de l'outil vernissage.");
+      return data;
+    } catch (err: any) {
+      console.error("Vernissage tool execution error:", err);
+      throw err;
+    }
+  };
+
+  // Handler: Execute one of the 5 Collector & Sales Tools
+  const handleAnalyzeSalesTool = async (toolId: string) => {
+    try {
+      let imgToSend = imageBase64;
+      if (!imgToSend && PRESET_ARTWORKS.length > 0) {
+        try {
+          imgToSend = await getArtworkBase64(PRESET_ARTWORKS[0]);
+        } catch (e) {
+          console.warn("Could not load preset image for sales tool:", e);
+        }
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+      if (customApiKey) {
+        headers["x-custom-api-key"] = customApiKey;
+      }
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          toolId: toolId,
+          artistProfile: profile,
+          seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
+            title: a.title,
+            artist: a.artist,
+            medium: a.medium,
+            year: a.year
+          })) : undefined
+        })
+      });
+
+      const data = await parseApiResponse(response, "Erreur lors de l'exécution de l'outil de vente.");
+      return data;
+    } catch (err: any) {
+      console.error("Sales tool execution error:", err);
+      throw err;
+    }
+  };
+
+  // Handler: Execute one of the 5 Press, Media & Social Tools
+  const handleAnalyzePressTool = async (toolId: string) => {
+    try {
+      let imgToSend = imageBase64;
+      if (!imgToSend && PRESET_ARTWORKS.length > 0) {
+        try {
+          imgToSend = await getArtworkBase64(PRESET_ARTWORKS[0]);
+        } catch (e) {
+          console.warn("Could not load preset image for press tool:", e);
+        }
+      }
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+      if (customApiKey) {
+        headers["x-custom-api-key"] = customApiKey;
+      }
+
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          toolId: toolId,
+          artistProfile: profile,
+          seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
+            title: a.title,
+            artist: a.artist,
+            medium: a.medium,
+            year: a.year
+          })) : undefined
+        })
+      });
+
+      const data = await parseApiResponse(response, "Erreur lors de l'exécution de l'outil presse & médias.");
+      return data;
+    } catch (err: any) {
+      console.error("Press tool execution error:", err);
+      throw err;
+    }
   };
 
   // Handler: Clear History
@@ -742,8 +1070,8 @@ export default function App() {
   return (
     <div className={`min-h-screen relative overflow-x-hidden flex flex-col justify-between selection:bg-[#c9a84c] selection:text-black transition-colors duration-500 ${
       theme === "dark-gold"
-        ? "bg-[#0A0A0A] text-[#E0E0E0] border-[#141414] border-[12px] sm:border-[16px]"
-        : "bg-[#FAF7F2] text-[#2C2A29] border-[#e8dfd3] border-[12px] sm:border-[16px]"
+        ? "bg-[#0A0A0A] text-[#E0E0E0] border-0 md:border-[8px] lg:border-[12px] border-[#141414]"
+        : "bg-[#FAF7F2] text-[#2C2A29] border-0 md:border-[8px] lg:border-[12px] border-[#e8dfd3]"
     }`}>
       
       {/* Background film-grain noise */}
@@ -755,99 +1083,366 @@ export default function App() {
       />
 
       {/* Foreground Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 flex-1 flex flex-col">
         
         {/* Header */}
-        <header className={`mb-8 flex flex-col md:flex-row md:items-baseline justify-between gap-6 pb-6 border-b transition-colors duration-500 ${
+        <header className={`mb-6 sm:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 border-b transition-colors duration-500 ${
           theme === "dark-gold" ? "border-white/10" : "border-stone-200"
         }`}>
           <div className="text-center md:text-left flex flex-col">
-            <span className={`text-[11px] font-sans font-bold tracking-[0.35em] uppercase mb-1.5 transition-colors duration-300 ${
+            <span className={`text-[10px] sm:text-[11px] font-sans font-bold tracking-[0.3em] uppercase mb-1 transition-colors duration-300 ${
               theme === "dark-gold" ? "text-neutral-500" : "text-stone-500"
             }`}>
-              INTELLIGENCE ARTIFICIELLE & BEAUX-ARTS
+              LE PONT INTELLIGENT ENTRE ARTISTES, GALERIES & ACHETEURS
             </span>
-            <h1 className={`font-serif font-light text-5xl sm:text-6xl tracking-tight leading-none transition-colors duration-300 ${
+            <h1 className={`font-serif font-light text-3xl sm:text-5xl md:text-6xl tracking-tight leading-none transition-colors duration-300 ${
               theme === "dark-gold" ? "text-white" : "text-stone-950"
             }`}>
               L'Œil de <span className="italic text-[#c9a84c] font-light font-serif">l'Atelier</span>
             </h1>
-            <p className={`text-[10px] tracking-[0.25em] uppercase font-sans mt-3.5 transition-colors duration-300 ${
+            <p className={`text-[9px] sm:text-[10px] tracking-[0.15em] uppercase font-sans mt-2 sm:mt-3.5 transition-colors duration-300 font-bold ${
               theme === "dark-gold" ? "text-[#c9a84c]" : "text-[#9c7d2b]"
             }`}>
-              16 OUTILS IA POUR LES ARTISTES
+              36 OUTILS IA POUR CRÉER, VALORISER, EXPOSER & VENDRE VOTRE ART
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center md:items-baseline">
-            <div className={`border-l pl-6 hidden sm:block text-left transition-colors duration-300 ${
-              theme === "dark-gold" ? "border-white/20" : "border-black/10"
-            }`}>
-              <p className={`text-[10px] uppercase tracking-widest font-sans transition-colors duration-300 ${
-                theme === "dark-gold" ? "text-neutral-500" : "text-stone-500"
-              }`}>PORTFOLIO STATUS</p>
-              <p className="text-base font-light italic font-serif">Ready for Review</p>
-            </div>
-
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3">
             {/* Theme Selector Toggle */}
             <button
               onClick={handleToggleTheme}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
                 theme === "dark-gold"
                   ? "bg-black text-[#c9a84c] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black"
                   : "bg-white text-stone-900 border-stone-300 hover:bg-stone-50"
               }`}
             >
-              <Paintbrush className="w-4 h-4" />
+              <Paintbrush className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {theme === "dark-gold" ? "Mode Clair" : "Noir & Or"}
+            </button>
+
+            {/* Subscription Pro Trigger Button (3 € / mois ou 20 € / an) */}
+            <button
+              onClick={() => setIsSubscriptionModalOpen(true)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
+                isSubscriptionActive
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500 hover:text-black"
+                  : (theme === "dark-gold"
+                      ? "bg-[#c9a84c]/20 text-[#c9a84c] border-[#c9a84c]/60 hover:bg-[#c9a84c] hover:text-black"
+                      : "bg-amber-50 text-[#9c7d2b] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black")
+              }`}
+              title="Offre d'abonnement : 3 € / mois ou 20 € / an (1ère année)"
+            >
+              <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a84c]" />
+              <span>{isSubscriptionActive ? "Atelier Pro Actif" : "Offre Pro (3€/m | 20€/an)"}</span>
             </button>
 
             {/* Donation System Trigger */}
             <button
               onClick={() => setIsDonationOpen(true)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
                 theme === "dark-gold"
                   ? "bg-rose-950/20 text-rose-300 border-rose-900/40 hover:bg-rose-900 hover:text-white"
                   : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:text-rose-800"
               }`}
             >
-              <Heart className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-              Soutenir l'Atelier
+              <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 fill-rose-500/20" />
+              <span className="hidden xs:inline">Soutenir</span>
             </button>
 
+            {/* Carnet de Bord */}
             <button
               onClick={() => setIsHistoryOpen(true)}
-              className={`flex items-center gap-2 px-5 py-2.5 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border-none ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border-none ${
                 theme === "dark-gold"
                   ? "bg-[#c9a84c] text-black hover:bg-white"
                   : "bg-stone-900 text-white hover:bg-[#c9a84c] hover:text-black"
               }`}
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Carnet de Bord
             </button>
           </div>
         </header>
 
-        {/* Presentation & App Guide Banner */}
-        <AppDescriptionBanner theme={theme} />
-
-        {/* Configuration panel */}
-        <div className="mb-8">
-          <div className="mb-3 flex items-center gap-3 border-b pb-2 border-[#c9a84c]/30">
-            <span className="bg-[#c9a84c] text-black font-mono font-bold text-xs px-2.5 py-1 uppercase tracking-wider">
-              Étape 1 sur 4
-            </span>
-            <div>
-              <h3 className={`text-sm sm:text-base font-serif font-bold uppercase tracking-wider ${
+        {/* Hub Stratégique - 5 Pôles d'Excellence Métiers (36 Outils IA au Total) */}
+        <div className={`mb-6 sm:mb-8 p-4 sm:p-5 border transition-all duration-300 ${
+          theme === "dark-gold" 
+            ? "bg-[#0c0c0c] border-[#c9a84c]/60 shadow-lg" 
+            : "bg-amber-50/50 border-[#c9a84c]/60 shadow-sm"
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3.5 border-b border-[#c9a84c]/30">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-[10px] font-mono font-black uppercase tracking-widest bg-[#c9a84c] text-black px-2.5 py-0.5">
+                HUB STRATÉGIQUE
+              </span>
+              <h2 className={`text-xs sm:text-sm font-serif font-bold uppercase tracking-wider ${
                 theme === "dark-gold" ? "text-white" : "text-stone-900"
               }`}>
-                Profil & Intention de l'Artiste (Simulateur Personnalisé)
+                Les 5 Piliers Métiers de l'Artiste (36 Outils Spécialisés)
+              </h2>
+            </div>
+            <span className={`text-[10px] font-mono font-bold ${theme === "dark-gold" ? "text-[#c9a84c]" : "text-[#9c7d2b]"}`}>
+              Accès direct aux 16 Outils d'Atelier & aux 4 Passerelles Métiers
+            </span>
+          </div>
+
+          {/* 5 Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {/* 0: Suite Principale des 16 Outils d'Analyse Plastique */}
+            <button
+              type="button"
+              onClick={() => setIsArtworkToolsModalOpen(true)}
+              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm relative overflow-hidden ${
+                theme === "dark-gold"
+                  ? "bg-[#14120c] hover:bg-[#1c180e] border-[#c9a84c] text-white"
+                  : "bg-white hover:bg-amber-100/60 border-[#c9a84c] text-stone-900"
+              }`}
+            >
+              <div className="absolute top-0 right-0 w-12 h-12 bg-[#c9a84c]/10 rounded-bl-full pointer-events-none" />
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎨</span>
+                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
+                      16 Outils d'Atelier
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5 uppercase">
+                    16 OUTILS
+                  </span>
+                </div>
+                <p className={`text-[11px] font-sans leading-relaxed ${
+                  theme === "dark-gold" ? "text-neutral-300" : "text-stone-700"
+                }`}>
+                  Style, palette chromatique, cotation, certificat COA, cartel, poésie, critique & statement.
+                </p>
+              </div>
+              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span>Ouvrir les 16 Outils</span>
+                <span>→</span>
+              </div>
+            </button>
+
+            {/* 1: Passerelle Galeries */}
+            <button
+              type="button"
+              onClick={() => setIsGalleryBridgeOpen(true)}
+              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
+                theme === "dark-gold"
+                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
+                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🏛️</span>
+                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
+                      Passerelle Galeries
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
+                    5 OUTILS
+                  </span>
+                </div>
+                <p className={`text-[11px] font-sans leading-relaxed ${
+                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
+                }`}>
+                  Dossiers de candidature, matchmaking directeurs, bourse aux murs & salons d'art.
+                </p>
+              </div>
+              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span>Ouvrir la Passerelle</span>
+                <span>→</span>
+              </div>
+            </button>
+
+            {/* 2: Soirées & Vernissages */}
+            <button
+              type="button"
+              onClick={() => setIsVernissageModalOpen(true)}
+              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
+                theme === "dark-gold"
+                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
+                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🥂</span>
+                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
+                      Soirées & Vernissages
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
+                    5 OUTILS
+                  </span>
+                </div>
+                <p className={`text-[11px] font-sans leading-relaxed ${
+                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
+                }`}>
+                  QR cartels connectés, audioguide vocal IA, invitations VIP, RSVP & traiteur.
+                </p>
+              </div>
+              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span>Ouvrir les Vernissages</span>
+                <span>→</span>
+              </div>
+            </button>
+
+            {/* 3: Ventes & Acheteurs */}
+            <button
+              type="button"
+              onClick={() => setIsCollectorSalesOpen(true)}
+              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
+                theme === "dark-gold"
+                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
+                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">💼</span>
+                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
+                      Ventes & Acheteurs
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
+                    5 OUTILS
+                  </span>
+                </div>
+                <p className={`text-[11px] font-sans leading-relaxed ${
+                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
+                }`}>
+                  Défiscalisation Art 238 bis, factures Marcus, salon VIP & expédition d'art.
+                </p>
+              </div>
+              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span>Ouvrir les Ventes</span>
+                <span>→</span>
+              </div>
+            </button>
+
+            {/* 4: Presse & Réseaux */}
+            <button
+              type="button"
+              onClick={() => setIsPressSocialOpen(true)}
+              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
+                theme === "dark-gold"
+                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
+                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📣</span>
+                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
+                      Presse & Subventions
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
+                    5 OUTILS
+                  </span>
+                </div>
+                <p className={`text-[11px] font-sans leading-relaxed ${
+                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
+                }`}>
+                  Communiqué de presse muséal, scripts Reels TikTok, SEO & bourses DRAC/CNAP.
+                </p>
+              </div>
+              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span>Ouvrir Médias & Presse</span>
+                <span>→</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Quick 16-Tool Direct Access Bar (Without Scrolling Down) */}
+          <div className="mt-4 pt-3 border-t border-[#c9a84c]/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#c9a84c] font-black">
+                  ⚡ Lancement Rapide 1-Clic des 16 Outils d'Atelier (Direct depuis le Hub) :
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsArtworkToolsModalOpen(true)}
+                  className="text-[10px] font-mono text-[#c9a84c] hover:underline font-bold"
+                >
+                  [+] Ouvrir la Grille Détaillée
+                </button>
+              </div>
+            </div>
+
+            {/* 16 Interactive Tool Chips */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-1.5">
+              {TOOLS.map((tool) => {
+                const isSelected = activeToolId === tool.id;
+                const isReady = !!cache[tool.id];
+
+                return (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    onClick={() => handleSelectToolFromTop(tool.id)}
+                    title={tool.description}
+                    className={`px-2 py-1.5 border text-left flex items-center justify-between gap-1.5 transition-all text-[11px] font-mono ${
+                      isSelected
+                        ? "bg-[#c9a84c] text-black border-[#c9a84c] font-bold shadow-sm"
+                        : isReady
+                        ? theme === "dark-gold"
+                          ? "bg-[#161616] text-amber-200 border-[#c9a84c]/40 hover:border-[#c9a84c]"
+                          : "bg-white text-amber-900 border-[#c9a84c]/40 hover:border-[#c9a84c]"
+                        : theme === "dark-gold"
+                        ? "bg-black/60 text-neutral-400 border-white/10 hover:text-white hover:border-[#c9a84c]/60"
+                        : "bg-white/80 text-stone-600 border-stone-200 hover:text-black hover:border-[#c9a84c]"
+                    }`}
+                  >
+                    <span className="truncate">{tool.label}</span>
+                    {isReady ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" title="Analyse prête" />
+                    ) : (
+                      <span className="text-[9px] opacity-40">›</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Presentation & App Guide Banner */}
+        <AppDescriptionBanner 
+          theme={theme} 
+          onOpenArtworkTools={() => setIsArtworkToolsModalOpen(true)}
+          onOpenGalleryBridge={() => setIsGalleryBridgeOpen(true)}
+          onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
+          onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
+          onOpenPressSocial={() => setIsPressSocialOpen(true)}
+        />
+
+        {/* Configuration panel */}
+        <div className="mb-6 sm:mb-8">
+          <div className="mb-2.5 sm:mb-3 flex items-center gap-2.5 sm:gap-3 border-b pb-2 border-[#c9a84c]/30">
+            <span className="bg-[#c9a84c] text-black font-mono font-bold text-[11px] sm:text-xs px-2.5 py-0.5 sm:py-1 uppercase tracking-wider flex-shrink-0 whitespace-nowrap">
+              Étape 1 sur 4
+            </span>
+            <div className="min-w-0">
+              <h3 className={`text-xs sm:text-sm md:text-base font-serif font-bold uppercase tracking-wider truncate ${
+                theme === "dark-gold" ? "text-white" : "text-stone-900"
+              }`}>
+                Profil & Intention de l'Artiste
               </h3>
-              <p className={`text-xs font-sans mt-0.5 ${
+              <p className={`text-[11px] sm:text-xs font-sans mt-0.5 line-clamp-1 sm:line-clamp-none ${
                 theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
               }`}>
-                Renseignez vos coordonnées et votre univers plastique pour adapter les réponses du simulateur d'atelier.
+                Renseignez vos coordonnées et votre univers pour adapter les analyses.
               </p>
             </div>
           </div>
@@ -862,23 +1457,23 @@ export default function App() {
         </div>
 
         {/* Main Interface Workspace */}
-        <main className="flex-1 flex flex-col justify-center">
+        <main id="main-workspace-anchor" className="flex-1 flex flex-col justify-center">
           {!previewUrl ? (
             /* Upload Screen & Art Library */
-            <div className="animate-fadeIn py-4 space-y-10">
+            <div id="artwork-selector-section" className="animate-fadeIn py-2 sm:py-4 space-y-8 sm:space-y-10">
               
               {/* Step 2 Chapter Heading */}
-              <div className="flex items-center gap-3 border-b pb-2.5 border-[#c9a84c]/30">
-                <span className="bg-[#c9a84c] text-black font-mono font-bold text-xs px-2.5 py-1 uppercase tracking-wider">
+              <div className="flex items-center gap-2.5 sm:gap-3 border-b pb-2.5 border-[#c9a84c]/30">
+                <span className="bg-[#c9a84c] text-black font-mono font-bold text-[11px] sm:text-xs px-2.5 py-0.5 sm:py-1 uppercase tracking-wider flex-shrink-0 whitespace-nowrap">
                   Étape 2 sur 4
                 </span>
-                <div>
-                  <h3 className={`text-sm sm:text-base font-serif font-bold uppercase tracking-wider ${
+                <div className="min-w-0">
+                  <h3 className={`text-xs sm:text-sm md:text-base font-serif font-bold uppercase tracking-wider ${
                     theme === "dark-gold" ? "text-white" : "text-stone-900"
                   }`}>
                     Insérer l'Image d'une Œuvre ou Constituer une Série de Vernissage
                   </h3>
-                  <p className={`text-xs font-sans mt-0.5 ${
+                  <p className={`text-[11px] sm:text-xs font-sans mt-0.5 ${
                     theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
                   }`}>
                     Glissez-déposez le visuel d'une création unique ou sélectionnez plusieurs toiles pour simuler un vernissage complet.
@@ -1461,28 +2056,48 @@ export default function App() {
                 )}
                 {/* Error Banner */}
                 {error && (
-                  <div className="p-4 bg-rose-950/20 border-2 border-rose-900 text-rose-300 rounded-none text-xs flex gap-3 items-start animate-fadeIn">
-                    <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5" />
-                    <div className="space-y-1.5 leading-relaxed">
-                      <p className="font-semibold">Une erreur est survenue lors de l'analyse :</p>
-                      <p className="text-rose-400 font-light">{error}</p>
+                  <div className={`p-4 border-2 rounded-none text-xs flex flex-col sm:flex-row gap-3 items-start justify-between animate-fadeIn ${
+                    theme === "dark-gold" 
+                      ? "bg-rose-950/30 border-rose-800/80 text-rose-200" 
+                      : "bg-rose-50 border-rose-300 text-rose-900"
+                  }`}>
+                    <div className="flex gap-3 items-start min-w-0">
+                      <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5" />
+                      <div className="space-y-1 leading-relaxed">
+                        <p className="font-bold tracking-wide uppercase text-[10px] text-rose-400">
+                          {error.includes("quota") || error.includes("429") ? "Limite de Requêtes Temporaire (Quota Gratuit)" : "Information d'Analyse"}
+                        </p>
+                        <p className="font-light text-xs">{error}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto pt-2 sm:pt-0">
+                      <button
+                        type="button"
+                        onClick={() => executeAnalysis(activeToolId)}
+                        disabled={isLoading}
+                        className="flex-1 sm:flex-none px-3 py-1.5 bg-[#c9a84c] hover:bg-white text-black font-bold uppercase tracking-wider text-[10px] transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Réessayer l'analyse
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {/* Tools Bar selection index - Step 3 Chapter Heading */}
-                <div className={`border p-5 rounded-none shadow-md transition-colors duration-300 ${
+                <div className={`border p-3.5 sm:p-5 rounded-none shadow-md transition-colors duration-300 ${
                   theme === "dark-gold" ? "bg-[#111111] border-white/10" : "bg-white border-[#e8dfd3]"
                 }`}>
-                  <div className="mb-4 flex items-center gap-2.5 border-b pb-2 border-[#c9a84c]/30">
-                    <span className="bg-[#c9a84c] text-black font-mono font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider">
+                  <div className="mb-3 sm:mb-4 flex items-center gap-2 sm:gap-2.5 border-b pb-2 border-[#c9a84c]/30">
+                    <span className="bg-[#c9a84c] text-black font-mono font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider flex-shrink-0 whitespace-nowrap">
                       Étape 3 sur 4
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className={`text-xs sm:text-sm font-serif font-bold uppercase tracking-wider ${
                         theme === "dark-gold" ? "text-white" : "text-stone-900"
                       }`}>
-                        Choix du Module de Simulation (16 Outils Pas-à-Pas)
+                        Choix du Module de Simulation (16 Outils)
                       </h3>
                       <p className={`text-[10px] font-sans ${
                         theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
@@ -1497,24 +2112,33 @@ export default function App() {
                     onSelectTool={handleSelectTool}
                     cache={cache}
                     theme={theme}
+                    isSubscribed={isSubscriptionActive}
+                    onRunAllAnalyses={handleRunAllAnalyses}
+                    onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+                    onOpenGalleryBridge={() => setIsGalleryBridgeOpen(true)}
+                    onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
+                    onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
+                    onOpenPressSocial={() => setIsPressSocialOpen(true)}
+                    batchProgress={batchProgress}
+                    onRerunTool={handleRerunTool}
                   />
                 </div>
 
               </div>
 
               {/* Right Column: Output Results Panel - Step 4 Chapter Heading */}
-              <div className="lg:col-span-7">
-                <div className="mb-3 flex items-center gap-3 border-b pb-2 border-[#c9a84c]/30">
-                  <span className="bg-[#c9a84c] text-black font-mono font-bold text-xs px-2.5 py-1 uppercase tracking-wider">
+              <div id="results-panel-container" className="lg:col-span-7">
+                <div className="mb-2.5 sm:mb-3 flex items-center gap-2 sm:gap-2.5 border-b pb-2 border-[#c9a84c]/30">
+                  <span className="bg-[#c9a84c] text-black font-mono font-bold text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 uppercase tracking-wider flex-shrink-0 whitespace-nowrap">
                     Étape 4 sur 4
                   </span>
-                  <div>
-                    <h3 className={`text-sm sm:text-base font-serif font-bold uppercase tracking-wider ${
+                  <div className="min-w-0">
+                    <h3 className={`text-xs sm:text-sm md:text-base font-serif font-bold uppercase tracking-wider ${
                       theme === "dark-gold" ? "text-white" : "text-stone-900"
                     }`}>
-                      Résultats de la Simulation, Fiches & Certificats
+                      Résultats de la Simulation & Fiches
                     </h3>
-                    <p className={`text-xs font-sans mt-0.5 ${
+                    <p className={`text-[11px] sm:text-xs font-sans mt-0.5 ${
                       theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
                     }`}>
                       Consultez la fiche générée, copiez les cartels et sauvegardez dans votre Carnet de Bord.
@@ -1529,6 +2153,7 @@ export default function App() {
                   artistName={profile.name}
                   theme={theme}
                   previewUrl={previewUrl}
+                  onRerunCurrentTool={handleRerun}
                 />
               </div>
 
@@ -1565,6 +2190,73 @@ export default function App() {
         isOpen={isDonationOpen}
         onClose={() => setIsDonationOpen(false)}
         theme={theme}
+      />
+
+      {/* Subscription Pro Modal (3 € / mois ou 20 € / an) */}
+      <SubscriptionModal
+        isOpen={isSubscriptionModalOpen}
+        onClose={() => setIsSubscriptionModalOpen(false)}
+        isSubscribed={isSubscriptionActive}
+        onSubscribe={handleSubscribe}
+        onCancelSubscription={handleCancelSubscription}
+        theme={theme}
+      />
+
+      {/* Gallery Bridge Modal (5 Nouveaux Outils Galeries & Artistes) */}
+      <GalleryBridgeModal
+        isOpen={isGalleryBridgeOpen}
+        onClose={() => setIsGalleryBridgeOpen(false)}
+        theme={theme}
+        profile={profile}
+        activeArtworkImage={imageBase64}
+        activeSeries={activeSeries}
+        onAnalyzeGalleryTool={handleAnalyzeGalleryTool}
+      />
+
+      {/* Vernissage & Exhibition Events Modal (5 Outils Soirées & Événements) */}
+      <VernissageEventModal
+        isOpen={isVernissageModalOpen}
+        onClose={() => setIsVernissageModalOpen(false)}
+        theme={theme}
+        profile={profile}
+        activeArtworkImage={imageBase64}
+        activeSeries={activeSeries}
+        onAnalyzeVernissageTool={handleAnalyzeVernissageTool}
+      />
+
+      {/* Collector & Sales Modal (5 Outils Ventes Privées & Acheteurs) */}
+      <CollectorSalesModal
+        isOpen={isCollectorSalesOpen}
+        onClose={() => setIsCollectorSalesOpen(false)}
+        theme={theme}
+        profile={profile}
+        activeArtworkImage={imageBase64}
+        activeSeries={activeSeries}
+        onAnalyzeSalesTool={handleAnalyzeSalesTool}
+      />
+
+      {/* Press, Social & Grants Modal (5 Outils Médias & Rayonnement) */}
+      <PressSocialBridgeModal
+        isOpen={isPressSocialOpen}
+        onClose={() => setIsPressSocialOpen(false)}
+        theme={theme}
+        profile={profile}
+        activeArtworkImage={imageBase64}
+        activeSeries={activeSeries}
+        onAnalyzePressTool={handleAnalyzePressTool}
+      />
+
+      {/* 16 Workshop Analysis Tools Modal (Accès Rapide aux 16 Outils Majeurs) */}
+      <ArtworkToolsModal
+        isOpen={isArtworkToolsModalOpen}
+        onClose={() => setIsArtworkToolsModalOpen(false)}
+        theme={theme}
+        activeToolId={activeToolId}
+        cache={cache}
+        onSelectTool={handleSelectToolFromTop}
+        isSubscribed={isSubscriptionActive}
+        onRunAllAnalyses={handleRunAllAnalyses}
+        onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
       />
 
     </div>

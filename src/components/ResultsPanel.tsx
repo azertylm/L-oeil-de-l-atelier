@@ -18,6 +18,7 @@ interface ResultsPanelProps {
   artistName: string;
   theme?: "dark-gold" | "light";
   previewUrl?: string | null;
+  onRerunCurrentTool?: () => void;
 }
 
 export default function ResultsPanel({ 
@@ -26,7 +27,8 @@ export default function ResultsPanel({
   isLoading, 
   artistName, 
   theme = "dark-gold",
-  previewUrl 
+  previewUrl,
+  onRerunCurrentTool
 }: ResultsPanelProps) {
   const [copied, setCopied] = useState<string | null>(null);
   
@@ -108,17 +110,35 @@ export default function ResultsPanel({
   const getBorderColor = () => theme === "dark-gold" ? "border-white/10" : "border-stone-200";
 
   return (
-    <div className={`p-6 sm:p-8 rounded-none relative min-h-[450px] shadow-2xl flex flex-col justify-between border transition-all duration-300 ${
+    <div className={`p-3.5 sm:p-6 md:p-8 rounded-none relative min-h-[400px] shadow-2xl flex flex-col justify-between border transition-all duration-300 ${
       theme === "dark-gold" ? "bg-[#111111] border-white/10" : "bg-white border-[#e8dfd3]"
     }`}>
       {/* Top ambient gold line */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#c9a84c]" />
 
-      {/* Copy Actions Header */}
-      <div className={`flex justify-end gap-3 mb-6 border-b pb-4 ${getBorderColor()}`}>
+      {/* Actions Header (Relancer & Copier) */}
+      <div className={`flex flex-wrap items-center justify-between gap-2.5 mb-4 sm:mb-6 border-b pb-3 sm:pb-4 ${getBorderColor()}`}>
+        <div className="flex items-center gap-2">
+          {onRerunCurrentTool && (
+            <button
+              onClick={onRerunCurrentTool}
+              disabled={isLoading}
+              className={`flex items-center gap-1.5 px-3 py-1 border text-[10px] tracking-wider uppercase rounded-none transition-all duration-200 font-bold ${
+                theme === "dark-gold"
+                  ? "bg-[#c9a84c]/10 hover:bg-[#c9a84c] text-[#c9a84c] hover:text-black border-[#c9a84c]/40"
+                  : "bg-amber-50 hover:bg-[#c9a84c] text-[#9c7d2b] hover:text-black border-[#c9a84c]/50"
+              }`}
+              title="Relancer l'analyse pour régénérer des résultats frais"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+              <span>Relancer cette recherche</span>
+            </button>
+          )}
+        </div>
+
         <button
           onClick={handleCopyAllJson}
-          className={`flex items-center gap-1.5 px-3 py-1 border text-[10px] tracking-wider uppercase rounded-none transition-all duration-200 font-bold ${
+          className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 border text-[10px] tracking-wider uppercase rounded-none transition-all duration-200 font-bold ${
             theme === "dark-gold"
               ? "bg-black hover:bg-neutral-900 text-neutral-400 hover:text-white border-white/10"
               : "bg-stone-50 hover:bg-stone-100 text-stone-600 hover:text-stone-900 border-stone-200"
@@ -132,7 +152,7 @@ export default function ResultsPanel({
           ) : (
             <>
               <Copy className="w-3 h-3" />
-              Copier les données brutes (JSON)
+              Copier (JSON)
             </>
           )}
         </button>
@@ -143,41 +163,41 @@ export default function ResultsPanel({
         
         {/* TOOL 1: STYLE */}
         {toolId === "style" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Style Identifié</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 {result.style || "Non déterminé"}
               </h3>
             </div>
 
-            <div className={`space-y-4 text-sm leading-relaxed font-sans ${getMutedText()}`}>
+            <div className={`space-y-3 sm:space-y-4 text-xs sm:text-sm leading-relaxed font-sans ${getMutedText()}`}>
               <p>
-                <strong className={`uppercase tracking-wider text-[10px] block mb-1 font-bold ${getGoldText()}`}>Période ou Siècle :</strong>
+                <strong className={`uppercase tracking-wider text-[10px] block mb-0.5 font-bold ${getGoldText()}`}>Période ou Siècle :</strong>
                 <span className={getBodyText()}>{result.periode || "Indéterminée"}</span>
               </p>
               
               <p>
-                <strong className={`uppercase tracking-wider text-[10px] block mb-1 font-bold ${getGoldText()}`}>Analyse Esthétique :</strong>
+                <strong className={`uppercase tracking-wider text-[10px] block mb-0.5 font-bold ${getGoldText()}`}>Analyse Esthétique :</strong>
                 <span className={getBodyText()}>{result.description}</span>
               </p>
 
               {result.influences && (
                 <p>
-                  <strong className={`uppercase tracking-wider text-[10px] block mb-1 font-bold ${getGoldText()}`}>Courants & Influences :</strong>
+                  <strong className={`uppercase tracking-wider text-[10px] block mb-0.5 font-bold ${getGoldText()}`}>Courants & Influences :</strong>
                   <span className={`${getBodyText()} italic`}>{result.influences}</span>
                 </p>
               )}
             </div>
 
             {result.mots_cles && result.mots_cles.length > 0 && (
-              <div className={`pt-4 border-t ${getBorderColor()}`}>
-                <p className={`text-[10px] tracking-[0.2em] uppercase font-sans mb-2.5 font-bold ${getMutedText()}`}>Mots-clés de l'œuvre</p>
-                <div className="flex flex-wrap gap-2">
+              <div className={`pt-3 sm:pt-4 border-t ${getBorderColor()}`}>
+                <p className={`text-[10px] tracking-[0.2em] uppercase font-sans mb-2 font-bold ${getMutedText()}`}>Mots-clés de l'œuvre</p>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {result.mots_cles.map((word: string, i: number) => (
                     <span 
                       key={i} 
-                      className={`text-[11px] font-mono border py-1 px-3 rounded-none transition-colors duration-200 ${
+                      className={`text-[10px] sm:text-[11px] font-mono border py-0.5 sm:py-1 px-2.5 rounded-none transition-colors duration-200 ${
                         theme === "dark-gold"
                           ? "border-white/10 text-neutral-300 bg-black hover:border-[#c9a84c]/50 hover:text-[#c9a84c]"
                           : "border-stone-200 text-stone-700 bg-stone-50 hover:border-[#c9a84c]/50 hover:text-[#c9a84c]"
@@ -194,29 +214,29 @@ export default function ResultsPanel({
 
         {/* TOOL 2: PALETTE (UPGRADED VISUALIZATION) */}
         {toolId === "palette" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Harmonie Chromatique</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 {result.harmonie || "Analyse de Couleur"}
               </h3>
             </div>
 
             {/* Interactive Color Palette Swatches */}
             <div>
-              <p className={`text-[10px] tracking-[0.2em] uppercase font-sans mb-3.5 font-bold ${getMutedText()}`}>
+              <p className={`text-[10px] tracking-[0.2em] uppercase font-sans mb-2.5 font-bold ${getMutedText()}`}>
                 Palette extraite (Cliquez pour copier la valeur HEX)
               </p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5 sm:gap-4">
                 {result.couleurs?.map((color: any, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => handleCopyText(color.hex, `hex-${idx}`)}
-                    className={`flex flex-col items-center gap-2 group text-left p-2 rounded-none transition-all duration-300 relative overflow-hidden ${getBgCard()}`}
+                    className={`flex flex-col items-center gap-1.5 sm:gap-2 group text-left p-2 rounded-none transition-all duration-300 relative overflow-hidden ${getBgCard()}`}
                   >
                     <div 
-                      className="w-full h-16 rounded-none border border-black/30 relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-12 sm:h-16 rounded-none border border-black/30 relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
                       style={{ backgroundColor: color.hex }}
                     >
                       <span className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -227,17 +247,17 @@ export default function ResultsPanel({
                         )}
                       </span>
                     </div>
-                    <span className={`text-[11px] font-mono font-bold group-hover:text-[#c9a84c] transition-colors ${
+                    <span className={`text-[10px] sm:text-[11px] font-mono font-bold group-hover:text-[#c9a84c] transition-colors ${
                       theme === "dark-gold" ? "text-neutral-300" : "text-stone-700"
                     }`}>
                       {color.hex}
                     </span>
-                    <span className={`text-[11px] font-sans font-bold italic truncate w-full text-center ${
+                    <span className={`text-[10px] sm:text-[11px] font-sans font-bold italic truncate w-full text-center ${
                       theme === "dark-gold" ? "text-white" : "text-stone-900"
                     }`}>
                       {color.nom}
                     </span>
-                    <span className="text-[9px] text-neutral-500 uppercase tracking-wider text-center w-full leading-tight font-sans font-bold">
+                    <span className="text-[8px] sm:text-[9px] text-neutral-500 uppercase tracking-wider text-center w-full leading-tight font-sans font-bold">
                       {color.role}
                     </span>
                   </button>
@@ -247,13 +267,12 @@ export default function ResultsPanel({
 
             {/* UPGRADE: Seamless Color Distribution Signature Bar */}
             {result.couleurs && result.couleurs.length > 0 && (
-              <div className={`p-4 rounded-none border ${getBorderColor()} ${theme === "dark-gold" ? "bg-black" : "bg-white"}`}>
-                <span className={`text-[10px] uppercase tracking-wider block mb-2 font-bold ${getMutedText()}`}>
+              <div className={`p-3 sm:p-4 rounded-none border ${getBorderColor()} ${theme === "dark-gold" ? "bg-black" : "bg-white"}`}>
+                <span className={`text-[10px] uppercase tracking-wider block mb-1.5 font-bold ${getMutedText()}`}>
                   Empreinte Chromatique de l'Œuvre
                 </span>
-                <div className="h-6 w-full flex rounded-none overflow-hidden border border-black/20">
+                <div className="h-5 sm:h-6 w-full flex rounded-none overflow-hidden border border-black/20">
                   {result.couleurs.map((color: any, idx: number) => {
-                    // Create simulated realistic distributions (e.g. primary takes most space)
                     const distribution = idx === 0 ? "40%" : idx === 1 ? "25%" : idx === 2 ? "18%" : idx === 3 ? "12%" : "5%";
                     return (
                       <div 
@@ -267,23 +286,23 @@ export default function ResultsPanel({
                     );
                   })}
                 </div>
-                <div className="flex justify-between text-[9px] text-neutral-500 mt-1.5 font-mono">
+                <div className="flex justify-between text-[8px] sm:text-[9px] text-neutral-500 mt-1 font-mono">
                   <span>Dominante ({result.couleurs[0]?.hex})</span>
                   <span>Accents ({result.couleurs[result.couleurs.length-1]?.hex})</span>
                 </div>
               </div>
             )}
 
-            <div className={`space-y-4 text-sm leading-relaxed font-sans border-t pt-5 ${getBorderColor()}`}>
+            <div className={`space-y-3 sm:space-y-4 text-xs sm:text-sm leading-relaxed font-sans border-t pt-4 sm:pt-5 ${getBorderColor()}`}>
               <p>
-                <strong className={`uppercase tracking-wider text-[10px] block mb-1 font-bold ${getGoldText()}`}>Ambiance Émotionnelle :</strong>
+                <strong className={`uppercase tracking-wider text-[10px] block mb-0.5 font-bold ${getGoldText()}`}>Ambiance Émotionnelle :</strong>
                 <span className={getBodyText()}>{result.ambiance}</span>
               </p>
 
-              <div className={`p-4 border-l-4 rounded-none ${
+              <div className={`p-3 sm:p-4 border-l-4 rounded-none ${
                 theme === "dark-gold" ? "bg-black border-l-[#c9a84c] border-white/10" : "bg-[#FAF7F2] border-l-[#c9a84c] border-[#e8dfd3]"
               }`}>
-                <strong className={`uppercase tracking-wider text-[10px] block mb-1 font-bold ${getGoldText()}`}>Conseil Chromatique :</strong>
+                <strong className={`uppercase tracking-wider text-[10px] block mb-0.5 font-bold ${getGoldText()}`}>Conseil Chromatique :</strong>
                 <p className={`text-xs italic ${getBodyText()}`}>{result.conseil}</p>
               </div>
             </div>
@@ -292,40 +311,40 @@ export default function ResultsPanel({
 
         {/* TOOL 3: TECHNIQUE (UPGRADED PROCESS TIMELINE) */}
         {toolId === "technique" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Analyse de l'Artisanat</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Déconstruction Technique
               </h3>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {result.etapes_supposees && (
                 <div>
-                  <h4 className={`uppercase tracking-wider text-[10px] mb-4 flex items-center gap-2 font-bold ${getGoldText()}`}>
+                  <h4 className={`uppercase tracking-wider text-[10px] mb-3 flex items-center gap-2 font-bold ${getGoldText()}`}>
                     <Layers className="w-4 h-4" />
                     Étapes de Réalisation (Chronologie Supposée) :
                   </h4>
                   
                   {/* UPGRADE: Sleek vertical workshop timeline blueprint */}
-                  <div className="relative border-l border-dashed border-[#c9a84c]/30 ml-3 pl-6 space-y-6">
+                  <div className="relative border-l border-dashed border-[#c9a84c]/30 ml-2.5 pl-4 sm:pl-6 space-y-4 sm:space-y-6">
                     {result.etapes_supposees.map((step: string, i: number) => (
                       <div key={i} className="relative group">
                         {/* Timeline node */}
-                        <div className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full border flex items-center justify-center transition-colors duration-300 ${
+                        <div className={`absolute -left-[23px] sm:-left-[31px] top-0 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border flex items-center justify-center transition-colors duration-300 ${
                           theme === "dark-gold" 
                             ? "bg-black border-[#c9a84c] text-[#c9a84c]" 
                             : "bg-white border-[#9c7d2b] text-[#9c7d2b]"
                         }`}>
-                          <span className="text-[9px] font-mono font-bold">{i + 1}</span>
+                          <span className="text-[8px] sm:text-[9px] font-mono font-bold">{i + 1}</span>
                         </div>
                         
                         <div className="space-y-1">
-                          <span className={`text-[10px] font-mono tracking-wider block font-bold transition-colors ${getGoldText()}`}>
+                          <span className={`text-[9px] sm:text-[10px] font-mono tracking-wider block font-bold transition-colors ${getGoldText()}`}>
                             PHASE {i + 1}
                           </span>
-                          <p className={`text-sm leading-relaxed ${getBodyText()}`}>
+                          <p className={`text-xs sm:text-sm leading-relaxed ${getBodyText()}`}>
                             {step}
                           </p>
                         </div>
@@ -336,8 +355,8 @@ export default function ResultsPanel({
               )}
 
               {result.mediums_alternatifs && (
-                <div className={`border-t pt-5 ${getBorderColor()}`}>
-                  <h4 className={`uppercase tracking-wider text-[10px] mb-3 flex items-center gap-2 font-bold ${getGoldText()}`}>
+                <div className={`border-t pt-4 sm:pt-5 ${getBorderColor()}`}>
+                  <h4 className={`uppercase tracking-wider text-[10px] mb-2.5 flex items-center gap-2 font-bold ${getGoldText()}`}>
                     <Compass className={`w-4 h-4 ${getGoldText()}`} />
                     Médiums Alternatifs Suggérés :
                   </h4>
@@ -345,7 +364,7 @@ export default function ResultsPanel({
                     {result.mediums_alternatifs.map((m: string, i: number) => (
                       <div 
                         key={i} 
-                        className={`p-2.5 rounded-none border text-xs font-sans flex items-center gap-2 ${
+                        className={`p-2 sm:p-2.5 rounded-none border text-xs font-sans flex items-center gap-2 ${
                           theme === "dark-gold" ? "bg-black/50 border-white/5 text-neutral-300" : "bg-stone-50 border-stone-100 text-stone-700"
                         }`}
                       >
@@ -358,7 +377,7 @@ export default function ResultsPanel({
               )}
 
               {result.astuce_pro && (
-                <div className={`p-4 border-l-4 rounded-none ${
+                <div className={`p-3 sm:p-4 border-l-4 rounded-none ${
                   theme === "dark-gold" ? "bg-black border-white/10 border-l-[#c9a84c]" : "bg-[#FAF7F2] border-[#e8dfd3] border-l-[#c9a84c]"
                 }`}>
                   <span className={`text-[10px] font-mono uppercase tracking-widest block mb-1 font-bold ${getGoldText()}`}>
@@ -373,34 +392,33 @@ export default function ResultsPanel({
           </div>
         )}
 
-        {/* TOOL 4: CRITIQUE (ELEGANT EDITORIAL CARD) */}
+        {/* TOOL 4: CRITIQUE (ELEGANT EDITORIAL CARD - HIGH READABILITY) */}
         {toolId === "critique" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Regard Littéraire</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 « {result.titre_critique || "Critique Esthétique"} »
               </h3>
             </div>
 
-            {/* UPGRADE: Museum-Guide editorial spread styled layout */}
-            <div className={`p-6 sm:p-8 rounded-none border relative overflow-hidden ${
+            {/* UPGRADE: Museum-Guide editorial spread styled layout with comfortable left-aligned readable text */}
+            <div className={`p-4 sm:p-6 md:p-8 rounded-none border relative overflow-hidden ${
               theme === "dark-gold" ? "bg-[#0c0c0c] border-white/10" : "bg-stone-50 border-stone-200"
             }`}>
-              {/* Drop cap effect on first letter */}
-              <Quote className="absolute top-4 right-4 w-12 h-12 text-[#c9a84c]/5 stroke-[0.5] pointer-events-none" />
+              <Quote className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 sm:w-12 sm:h-12 text-[#c9a84c]/10 stroke-[0.5] pointer-events-none" />
               
-              <div className="space-y-4 font-serif font-light text-base leading-loose italic whitespace-pre-line text-justify select-text">
+              <div className={`space-y-4 font-serif text-sm sm:text-base md:text-lg leading-relaxed sm:leading-loose whitespace-pre-line text-left select-text ${getBodyText()}`}>
                 {result.texte}
               </div>
             </div>
 
             {result.citation && (
-              <div className={`text-center py-6 px-4 border-2 border-dashed rounded-none ${
+              <div className={`text-center py-4 sm:py-6 px-3 sm:px-4 border-2 border-dashed rounded-none ${
                 theme === "dark-gold" ? "border-white/10 bg-black" : "border-[#e8dfd3] bg-[#FAF7F2]"
               }`}>
-                <span className={`text-[9px] tracking-[0.25em] uppercase font-sans block mb-2 font-bold ${getGoldText()}`}>Axiome d'Art</span>
-                <p className={`font-serif text-[17px] italic font-light ${getHeadingText()}`}>
+                <span className={`text-[9px] tracking-[0.25em] uppercase font-sans block mb-1.5 font-bold ${getGoldText()}`}>Axiome d'Art</span>
+                <p className={`font-serif text-sm sm:text-base md:text-lg italic font-light ${getHeadingText()}`}>
                   « {result.citation} »
                 </p>
               </div>
@@ -410,17 +428,17 @@ export default function ResultsPanel({
 
         {/* TOOL 5: CONSEILS */}
         {toolId === "conseils" && (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
               <div>
                 <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Coaching Académique</p>
-                <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+                <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                   Conseils d'Atelier
                 </h3>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-auto">
-                <span className={`text-[10px] uppercase tracking-widest font-sans font-bold ${getMutedText()}`}>Maîtrise estimée :</span>
-                <span className={`text-xs font-mono font-bold py-0.5 px-3 rounded-none border ${
+                <span className={`text-[10px] uppercase tracking-widest font-sans font-bold ${getMutedText()}`}>Maîtrise :</span>
+                <span className={`text-xs font-mono font-bold py-0.5 px-2.5 rounded-none border ${
                   theme === "dark-gold" 
                     ? "bg-[#c9a84c]/10 border-[#c9a84c]/30 text-[#c9a84c]" 
                     : "bg-[#c9a84c]/10 border-[#c9a84c]/30 text-[#9c7d2b]"
@@ -430,11 +448,11 @@ export default function ResultsPanel({
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               {result.forces && (
                 <div>
                   <h4 className={`font-sans text-xs uppercase tracking-wider mb-2 font-bold ${getGoldText()}`}>Points Forts de la Composition :</h4>
-                  <ul className={`space-y-1.5 list-disc list-inside text-sm font-sans ${getBodyText()}`}>
+                  <ul className={`space-y-1 list-disc list-inside text-xs sm:text-sm font-sans ${getBodyText()}`}>
                     {result.forces.map((force: string, i: number) => (
                       <li key={i}>{force}</li>
                     ))}
@@ -443,20 +461,20 @@ export default function ResultsPanel({
               )}
 
               {result.axes_amelioration && (
-                <div className={`border-t pt-5 ${getBorderColor()}`}>
-                  <h4 className={`font-sans text-xs uppercase tracking-wider mb-3 font-bold ${getGoldText()}`}>Axes de Progression & Exercices :</h4>
-                  <div className="grid grid-cols-1 gap-4">
+                <div className={`border-t pt-4 sm:pt-5 ${getBorderColor()}`}>
+                  <h4 className={`font-sans text-xs uppercase tracking-wider mb-2.5 font-bold ${getGoldText()}`}>Axes de Progression & Exercices :</h4>
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
                     {result.axes_amelioration.map((axe: any, i: number) => (
-                      <div key={i} className={`p-4 rounded-none hover:border-[#c9a84c]/30 transition-all border ${
+                      <div key={i} className={`p-3 sm:p-4 rounded-none hover:border-[#c9a84c]/30 transition-all border ${
                         theme === "dark-gold" ? "bg-black border-white/10" : "bg-[#FAF7F2] border-stone-200"
                       }`}>
-                        <span className={`text-xs font-sans font-bold uppercase border-b pb-1.5 block mb-2 ${
+                        <span className={`text-xs font-sans font-bold uppercase border-b pb-1 block mb-1.5 ${
                           theme === "dark-gold" ? "text-white border-white/10" : "text-stone-900 border-stone-200"
                         }`}>
                           {i + 1}. Améliorer : {axe.aspect}
                         </span>
                         <p className={`text-xs leading-relaxed font-sans mb-2 ${getMutedText()}`}>{axe.conseil}</p>
-                        <p className={`text-xs italic p-2.5 rounded-none border ${
+                        <p className={`text-xs italic p-2 sm:p-2.5 rounded-none border ${
                           theme === "dark-gold" 
                             ? "text-[#c9a84c] bg-neutral-900/50 border-white/5" 
                             : "text-[#9c7d2b] bg-white border-[#e8dfd3]"
@@ -470,9 +488,9 @@ export default function ResultsPanel({
               )}
 
               {result.ressources && result.ressources.length > 0 && (
-                <div className={`border-t pt-4 ${getBorderColor()}`}>
+                <div className={`border-t pt-3 sm:pt-4 ${getBorderColor()}`}>
                   <p className={`text-xs font-sans ${getMutedText()}`}>
-                    <strong className={`font-sans text-xs uppercase tracking-wider font-bold ${getGoldText()}`}>Références & Études suggérées :</strong>{" "}
+                    <strong className={`font-sans text-xs uppercase tracking-wider font-bold ${getGoldText()}`}>Références suggérées :</strong>{" "}
                     {result.ressources.join(" · ")}
                   </p>
                 </div>
@@ -483,67 +501,67 @@ export default function ResultsPanel({
 
         {/* TOOL 6: ESTIMATION PRIX (UPGRADED LINEAR SLIDER SCALE) */}
         {toolId === "prix" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Marché de l'Art</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Positionnement & Estimation
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className={`p-4 text-center rounded-none border transition-all ${
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className={`p-3.5 sm:p-4 text-center rounded-none border transition-all ${
                 theme === "dark-gold" ? "bg-black border-white/10" : "bg-stone-50 border-stone-200"
               }`}>
-                <span className={`text-[10px] uppercase tracking-widest block mb-1 font-bold ${getMutedText()}`}>Cote Artiste Émergent (Min)</span>
-                <span className={`text-2xl font-mono font-bold ${theme === "dark-gold" ? "text-neutral-300" : "text-stone-800"}`}>{result.fourchette_basse}</span>
+                <span className={`text-[10px] uppercase tracking-widest block mb-1 font-bold ${getMutedText()}`}>Cote Émergent (Min)</span>
+                <span className={`text-xl sm:text-2xl font-mono font-bold ${theme === "dark-gold" ? "text-neutral-300" : "text-stone-800"}`}>{result.fourchette_basse}</span>
               </div>
               
-              <div className={`p-4 text-center rounded-none shadow-md border transition-all ${
+              <div className={`p-3.5 sm:p-4 text-center rounded-none shadow-md border transition-all ${
                 theme === "dark-gold" ? "bg-[#1a1a15] border-[#c9a84c]/40" : "bg-[#fdfbfa] border-[#c9a84c]/50"
               }`}>
-                <span className={`text-[10px] uppercase tracking-widest block mb-1 font-bold ${getGoldText()}`}>Cote Artiste Établi / Galerie (Max)</span>
-                <span className={`text-2xl font-mono font-bold ${getGoldText()}`}>{result.fourchette_haute}</span>
+                <span className={`text-[10px] uppercase tracking-widest block mb-1 font-bold ${getGoldText()}`}>Cote Galerie (Max)</span>
+                <span className={`text-xl sm:text-2xl font-mono font-bold ${getGoldText()}`}>{result.fourchette_haute}</span>
               </div>
             </div>
 
             {/* UPGRADE: Interactive Market Value Range Axis */}
-            <div className={`p-5 rounded-none border ${getBorderColor()} ${theme === "dark-gold" ? "bg-black" : "bg-white"}`}>
-              <div className="flex justify-between items-center mb-4">
+            <div className={`p-3.5 sm:p-5 rounded-none border ${getBorderColor()} ${theme === "dark-gold" ? "bg-black" : "bg-white"}`}>
+              <div className="flex justify-between items-center mb-3 sm:mb-4">
                 <span className={`text-[10px] uppercase tracking-wider font-bold ${getMutedText()}`}>
                   Spectre de Valorisation Marché
                 </span>
                 <span className={`text-[9px] font-mono font-bold uppercase py-0.5 px-2 bg-amber-500/10 border border-amber-500/20 ${getGoldText()}`}>
-                  Zone de Revente Optimale
+                  Zone Optimale
                 </span>
               </div>
               
               {/* Sliding Range Track */}
-              <div className="relative pt-3 pb-6">
+              <div className="relative pt-2 pb-5">
                 <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden relative">
                   <div className="absolute left-[20%] right-[30%] h-full bg-[#c9a84c]" />
                 </div>
                 
                 {/* Scale nodes */}
-                <div className="absolute left-0 top-1 w-2.5 h-2.5 bg-neutral-600 rounded-full" title="Émergent" />
-                <div className="absolute left-[20%] top-0.5 w-3.5 h-3.5 bg-[#c9a84c] rounded-full border border-black shadow" title="Estimation Basse" />
-                <div className="absolute right-[30%] top-0.5 w-3.5 h-3.5 bg-[#c9a84c] rounded-full border border-black shadow" title="Estimation Haute" />
-                <div className="absolute right-0 top-1 w-2.5 h-2.5 bg-neutral-600 rounded-full" title="Marché International" />
+                <div className="absolute left-0 top-0.5 w-2.5 h-2.5 bg-neutral-600 rounded-full" title="Émergent" />
+                <div className="absolute left-[20%] top-0 w-3.5 h-3.5 bg-[#c9a84c] rounded-full border border-black shadow" title="Estimation Basse" />
+                <div className="absolute right-[30%] top-0 w-3.5 h-3.5 bg-[#c9a84c] rounded-full border border-black shadow" title="Estimation Haute" />
+                <div className="absolute right-0 top-0.5 w-2.5 h-2.5 bg-neutral-600 rounded-full" title="Marché International" />
                 
                 {/* Scale indicators */}
                 <div className="flex justify-between text-[8px] text-neutral-500 font-mono mt-2 uppercase">
-                  <span>Atelier Artiste</span>
-                  <span>Bas de Fourchette</span>
-                  <span>Haut de Fourchette</span>
-                  <span>Galerie / Encan</span>
+                  <span>Atelier</span>
+                  <span>Bas Fourchette</span>
+                  <span>Haut Fourchette</span>
+                  <span>Galerie</span>
                 </div>
               </div>
             </div>
 
             {result.facteurs && (
-              <div className={`border-t pt-5 ${getBorderColor()}`}>
-                <h4 className={`font-sans text-xs uppercase tracking-wider mb-3 font-bold ${getGoldText()}`}>Facteurs de Valorisation :</h4>
-                <div className="space-y-2.5 font-sans">
+              <div className={`border-t pt-4 sm:pt-5 ${getBorderColor()}`}>
+                <h4 className={`font-sans text-xs uppercase tracking-wider mb-2.5 font-bold ${getGoldText()}`}>Facteurs de Valorisation :</h4>
+                <div className="space-y-2 font-sans">
                   {result.facteurs.map((f: any, i: number) => {
                     const colors: any = {
                       positif: "text-emerald-500 bg-emerald-500/5 border-emerald-500/20",
@@ -551,8 +569,8 @@ export default function ResultsPanel({
                       neutre: "text-neutral-500 bg-neutral-500/5 border-neutral-500/20"
                     };
                     return (
-                      <div key={i} className="flex gap-3 text-xs leading-relaxed items-start">
-                        <span className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-none ${colors[f.impact] || colors.neutre}`}>
+                      <div key={i} className="flex gap-2.5 text-xs leading-relaxed items-start">
+                        <span className={`px-1.5 py-0.5 border text-[8px] sm:text-[9px] font-bold uppercase rounded-none flex-shrink-0 ${colors[f.impact] || colors.neutre}`}>
                           {f.impact}
                         </span>
                         <span className={getBodyText()}>
@@ -565,12 +583,12 @@ export default function ResultsPanel({
               </div>
             )}
 
-            <div className={`border-t pt-5 text-sm leading-relaxed font-sans space-y-4 ${getMutedText()}`}>
+            <div className={`border-t pt-4 sm:pt-5 text-xs sm:text-sm leading-relaxed font-sans space-y-3 sm:space-y-4 ${getMutedText()}`}>
               <p>
                 <strong className={theme === "dark-gold" ? "text-neutral-200" : "text-stone-900"}>État du Marché :</strong> {result.marche}
               </p>
               {result.conseil_vente && (
-                <div className={`p-4 border-l-4 rounded-none ${
+                <div className={`p-3 sm:p-4 border-l-4 rounded-none ${
                   theme === "dark-gold" ? "bg-black border-white/10 border-l-[#c9a84c]" : "bg-[#FAF7F2] border-[#e8dfd3] border-l-[#c9a84c]"
                 }`}>
                   <strong className={`text-xs uppercase tracking-wider font-bold block mb-1 ${getGoldText()}`}>Coup de pouce de courtier :</strong>
@@ -583,11 +601,11 @@ export default function ResultsPanel({
 
         {/* TOOL 7: CERTIFICAT (UPGRADED MUSEUM DOCUMENT DISPLAY) */}
         {toolId === "certificat" && (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
               <div>
                 <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Mentions Légales</p>
-                <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+                <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                   Génération de Certificat
                 </h3>
               </div>
@@ -611,7 +629,7 @@ export default function ResultsPanel({
                 />
                 <button
                   onClick={handlePrintCertificate}
-                  className={`ml-2 flex items-center gap-1.5 px-3 py-1.5 border text-[10px] tracking-wider uppercase rounded-none transition-all duration-200 font-bold ${
+                  className={`ml-1.5 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border text-[10px] tracking-wider uppercase rounded-none transition-all duration-200 font-bold ${
                     theme === "dark-gold"
                       ? "bg-black border-white/10 text-[#c9a84c] hover:bg-neutral-900"
                       : "bg-white border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -626,7 +644,7 @@ export default function ResultsPanel({
             {/* Certificat High Fidelity Document Card */}
             <div 
               id="certificate-printable-area"
-              className={`p-8 sm:p-12 text-center relative max-w-xl mx-auto shadow-2xl rounded-none border-[6px] border-double transition-all duration-300 ${
+              className={`p-4 sm:p-8 md:p-10 text-center relative max-w-xl mx-auto shadow-2xl rounded-none border-[4px] sm:border-[6px] border-double transition-all duration-300 ${
                 certPaperColor === "parchment"
                   ? "bg-[#FAF5EA] text-[#3e2a14] border-[#c9a84c]"
                   : certPaperColor === "ivory"
@@ -635,134 +653,132 @@ export default function ResultsPanel({
               }`}
             >
               {/* Subtle vintage border */}
-              <div className="absolute top-2 left-2 right-2 bottom-2 border border-[#c9a84c]/20 pointer-events-none" />
+              <div className="absolute top-1.5 left-1.5 right-1.5 bottom-1.5 border border-[#c9a84c]/20 pointer-events-none" />
               
-              {/* Optional embedded thumbnail of artwork for stunning visualisation! */}
               {previewUrl && (
-                <div className="absolute top-4 right-4 w-12 h-12 border border-[#c9a84c]/40 p-0.5 bg-white/40 hidden sm:block">
+                <div className="absolute top-3 right-3 w-10 h-10 sm:w-12 sm:h-12 border border-[#c9a84c]/40 p-0.5 bg-white/40 hidden sm:block">
                   <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
                 </div>
               )}
 
-              <h4 className="text-xl uppercase tracking-[0.25em] font-serif font-light mb-8 border-b pb-4 border-[#c9a84c]/30">
+              <h4 className="text-base sm:text-xl uppercase tracking-[0.2em] font-serif font-light mb-4 sm:mb-8 border-b pb-2 sm:pb-4 border-[#c9a84c]/30">
                 Certificat d'Authenticité
               </h4>
               
-              <div className="text-left space-y-4 font-sans text-sm">
-                <p className="flex justify-between border-b pb-1.5 border-[#c9a84c]/20">
-                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Auteur de l'œuvre :</span>
-                  <span className="font-bold text-base">{artistName || "Nom de l'Artiste"}</span>
+              <div className="text-left space-y-2.5 sm:space-y-4 font-sans text-xs sm:text-sm">
+                <p className="flex justify-between border-b pb-1 border-[#c9a84c]/20">
+                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Auteur :</span>
+                  <span className="font-bold text-sm sm:text-base">{artistName || "Nom de l'Artiste"}</span>
                 </p>
-                <p className="flex justify-between border-b pb-1.5 border-[#c9a84c]/20">
-                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Titre de l'œuvre :</span>
-                  <span className="font-serif italic font-bold text-base">« {result.titre_oeuvre} »</span>
+                <p className="flex justify-between border-b pb-1 border-[#c9a84c]/20">
+                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Titre :</span>
+                  <span className="font-serif italic font-bold text-sm sm:text-base">« {result.titre_oeuvre} »</span>
                 </p>
-                <p className="flex justify-between border-b pb-1.5 border-[#c9a84c]/20">
-                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Technique & Médium :</span>
+                <p className="flex justify-between border-b pb-1 border-[#c9a84c]/20">
+                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Médium :</span>
                   <span className="font-bold">{result.technique_supposee}</span>
                 </p>
-                <p className="flex justify-between border-b pb-1.5 border-[#c9a84c]/20">
-                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Émission du Certificat :</span>
+                <p className="flex justify-between border-b pb-1 border-[#c9a84c]/20">
+                  <span className="font-sans text-[10px] uppercase tracking-wider font-bold opacity-60">Émission :</span>
                   <span className="font-bold">{new Date().toLocaleDateString("fr-FR")}</span>
                 </p>
 
-                <div className="pt-6 text-xs font-sans italic leading-relaxed text-center opacity-80 border-t border-dashed border-[#c9a84c]/30 mt-4 px-4">
+                <div className="pt-4 sm:pt-6 text-xs font-sans italic leading-relaxed text-center opacity-80 border-t border-dashed border-[#c9a84c]/30 mt-3 sm:mt-4 px-2 sm:px-4">
                   "{result.texte_certificat}"
                 </div>
 
-                <div className="pt-10 flex justify-between items-end">
+                <div className="pt-6 sm:pt-10 flex justify-between items-end">
                   <div className="text-left font-sans">
-                    {/* SVG Seal Watermark simulation */}
-                    <div className="w-14 h-14 rounded-full border-2 border-[#c9a84c]/60 flex flex-col items-center justify-center text-[7px] uppercase tracking-tighter text-[#c9a84c] font-black italic relative opacity-80 mb-2 rotate-[-12deg]">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-[#c9a84c]/60 flex flex-col items-center justify-center text-[6px] sm:text-[7px] uppercase tracking-tighter text-[#c9a84c] font-black italic relative opacity-80 mb-1.5 rotate-[-12deg]">
                       <span className="scale-75">AUTHENTIQUE</span>
-                      <div className="absolute inset-1 border border-dashed border-[#c9a84c]/30 rounded-full" />
+                      <div className="absolute inset-0.5 border border-dashed border-[#c9a84c]/30 rounded-full" />
                     </div>
-                    <span className="text-[10px] text-neutral-500 uppercase block font-bold leading-none">L'Œil de l'Atelier</span>
-                    <span className="text-[9px] uppercase font-bold text-[#c9a84c]">Sceau Numérique d'Authenticité</span>
+                    <span className="text-[9px] text-neutral-500 uppercase block font-bold leading-none">L'Œil de l'Atelier</span>
+                    <span className="text-[8px] sm:text-[9px] uppercase font-bold text-[#c9a84c]">Sceau Numérique</span>
                   </div>
-                  <div className="text-right border-t border-dashed border-stone-400 w-36 pt-1 font-sans">
-                    <span className="text-[10px] text-neutral-500 uppercase font-bold">Signature de l'Artiste</span>
+                  <div className="text-right border-t border-dashed border-stone-400 w-28 sm:w-36 pt-1 font-sans">
+                    <span className="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold">Signature</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <p className="text-center text-xs text-neutral-500 italic mt-4 font-sans leading-relaxed px-6">
-              Ce modèle de certificat est juridiquement rédigé. Vous pouvez l'exporter en PDF ou l'imprimer sur un beau papier d'art à grain pour l'inclure lors de la vente de l'œuvre physique.
+            <p className="text-center text-xs text-neutral-500 italic mt-3 font-sans leading-relaxed px-3 sm:px-6">
+              Ce modèle de certificat est juridiquement rédigé. Vous pouvez l'exporter en PDF ou l'imprimer sur un beau papier d'art à grain.
             </p>
           </div>
         )}
 
         {/* TOOL 8: DESIGN INTÉRIEUR / DECOR (UPGRADED INTERACTIVE ROOM WALL VISUALIZER) */}
         {toolId === "decor" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Valorisation Spatiale</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Mise en Situation Intérieure
               </h3>
             </div>
 
             {/* Room Simulator Custom Visualizer */}
-            <div className={`p-4 rounded-none border ${getBorderColor()} ${theme === "dark-gold" ? "bg-black" : "bg-white"}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className={`p-3 sm:p-4 rounded-none border ${getBorderColor()} ${theme === "dark-gold" ? "bg-black" : "bg-white"}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 sm:mb-4">
                 <span className={`text-[10px] uppercase tracking-wider font-bold ${getMutedText()}`}>
-                  Simulateur d'Exposition Interactive (Salon Virtuel)
+                  Simulateur d'Exposition (Salon Virtuel)
                 </span>
                 
                 {/* Visual Options Toolbar */}
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   {/* Room selectors */}
-                  <div className="flex items-center gap-1.5 border border-neutral-800/80 p-0.5 bg-black/30">
+                  <div className="flex items-center gap-1 border border-neutral-800/80 p-0.5 bg-black/30">
                     <button
                       onClick={() => setSelectedRoom("haussmann")}
-                      className={`px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
+                      className={`px-1.5 sm:px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
                         selectedRoom === "haussmann" ? "bg-[#c9a84c] text-black" : "text-neutral-400"
                       }`}
                     >
-                      Salon Haussmannien
+                      Haussmann
                     </button>
                     <button
                       onClick={() => setSelectedRoom("loft")}
-                      className={`px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
+                      className={`px-1.5 sm:px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
                         selectedRoom === "loft" ? "bg-[#c9a84c] text-black" : "text-neutral-400"
                       }`}
                     >
-                      Loft Industriel
+                      Loft
                     </button>
                     <button
                       onClick={() => setSelectedRoom("zen")}
-                      className={`px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
+                      className={`px-1.5 sm:px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
                         selectedRoom === "zen" ? "bg-[#c9a84c] text-black" : "text-neutral-400"
                       }`}
                     >
-                      Chambre Zen
+                      Zen
                     </button>
                   </div>
                   
                   {/* Frame selectors */}
-                  <div className="flex items-center gap-1.5 border border-neutral-800/80 p-0.5 bg-black/30">
+                  <div className="flex items-center gap-1 border border-neutral-800/80 p-0.5 bg-black/30">
                     <button
                       onClick={() => setSelectedFrame("gold")}
-                      className={`px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
+                      className={`px-1.5 sm:px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
                         selectedFrame === "gold" ? "bg-amber-500/10 text-amber-400" : "text-neutral-400"
                       }`}
                       title="Cadre Or Classique"
                     >
-                      Moulure Or
+                      Or
                     </button>
                     <button
                       onClick={() => setSelectedFrame("black")}
-                      className={`px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
+                      className={`px-1.5 sm:px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
                         selectedFrame === "black" ? "bg-neutral-800 text-white" : "text-neutral-400"
                       }`}
                       title="Cadre Noir Chic"
                     >
-                      Noir Chic
+                      Noir
                     </button>
                     <button
                       onClick={() => setSelectedFrame("oak")}
-                      className={`px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
+                      className={`px-1.5 sm:px-2 py-0.5 text-[8px] font-sans font-bold uppercase transition-all tracking-wider ${
                         selectedFrame === "oak" ? "bg-amber-700/20 text-orange-200" : "text-neutral-400"
                       }`}
                       title="Chêne Naturel"
@@ -779,33 +795,32 @@ export default function ResultsPanel({
                 style={{
                   backgroundImage: 
                     selectedRoom === "haussmann"
-                      ? `url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800')` // haussmann parlor fireplace style
+                      ? `url('https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=800')`
                       : selectedRoom === "loft"
-                        ? `url('https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&q=80&w=800')` // industrial brick studio
-                        : `url('https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=800')` // minimal beige bedroom headboard
+                        ? `url('https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&q=80&w=800')`
+                        : `url('https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=800')`
                 }}
               >
                 {/* Backdrop lighting mask overlay */}
                 <div className="absolute inset-0 bg-black/25 pointer-events-none" />
                 <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
 
-                {/* Simulated Sofa / Couch foreground for perspective depth */}
+                {/* Simulated Sofa / Couch foreground */}
                 <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-black/30 backdrop-blur-xs pointer-events-none border-t border-white/5" />
 
-                {/* THE PICTURE ON THE WALL WITH ADJUSTABLE FRAMING STYLES! */}
+                {/* THE PICTURE ON THE WALL */}
                 {previewUrl ? (
                   <div 
                     className={`absolute w-[24%] aspect-square bottom-[35%] transition-all duration-300 shadow-2xl flex items-center justify-center bg-white ${
                       selectedFrame === "gold"
-                        ? "border-[8px] border-amber-500 shadow-[0_15px_30px_rgba(0,0,0,0.4)] relative" // gold moulding style
+                        ? "border-[6px] sm:border-[8px] border-amber-500 shadow-[0_15px_30px_rgba(0,0,0,0.4)] relative"
                         : selectedFrame === "black"
-                          ? "border-[4px] border-neutral-900 shadow-[0_12px_25px_rgba(0,0,0,0.5)] relative" // minimal black style
-                          : "border-[6px] border-amber-800/80 shadow-[0_10px_20px_rgba(0,0,0,0.35)] relative" // oak warm style
+                          ? "border-[3px] sm:border-[4px] border-neutral-900 shadow-[0_12px_25px_rgba(0,0,0,0.5)] relative"
+                          : "border-[5px] sm:border-[6px] border-amber-800/80 shadow-[0_10px_20px_rgba(0,0,0,0.35)] relative"
                     }`}
                   >
-                    {/* Inner passe-partout mount margin */}
-                    <div className="absolute inset-1.5 border border-stone-200 pointer-events-none bg-transparent" />
-                    <div className="w-full h-full p-2 bg-stone-50 overflow-hidden flex items-center justify-center">
+                    <div className="absolute inset-1 border border-stone-200 pointer-events-none bg-transparent" />
+                    <div className="w-full h-full p-1.5 sm:p-2 bg-stone-50 overflow-hidden flex items-center justify-center">
                       <img 
                         src={previewUrl} 
                         alt="Simulated Picture" 
@@ -821,24 +836,24 @@ export default function ResultsPanel({
               </div>
             </div>
 
-            <div className={`space-y-5 text-sm leading-relaxed font-sans ${getBodyText()}`}>
-              <div className="space-y-1">
+            <div className={`space-y-4 text-xs sm:text-sm leading-relaxed font-sans ${getBodyText()}`}>
+              <div className="space-y-0.5">
                 <span className={`text-[10px] uppercase tracking-widest font-bold block ${getGoldText()}`}>Lieu d'exposition rêvé :</span>
                 <p className={`font-bold ${getHeadingText()}`}>{result.style_interieur}</p>
               </div>
 
-              <div className={`border-t pt-4 space-y-1 ${getBorderColor()}`}>
+              <div className={`border-t pt-3 space-y-0.5 ${getBorderColor()}`}>
                 <span className={`text-[10px] uppercase tracking-widest font-bold block ${getGoldText()}`}>Profil de l'Acheteur Cible :</span>
                 <p className={`font-bold ${getHeadingText()}`}>{result.acheteur_cible}</p>
               </div>
 
-              <div className={`pt-4 border-t ${getBorderColor()}`}>
-                <Quote className="w-5 h-5 text-[#c9a84c]/40 mb-1" />
-                <p className={`font-serif italic text-base leading-relaxed pl-4 border-l-4 border-[#c9a84c] ${getHeadingText()}`}>
+              <div className={`pt-3 border-t ${getBorderColor()}`}>
+                <Quote className="w-4 h-4 text-[#c9a84c]/40 mb-1" />
+                <p className={`font-serif italic text-sm sm:text-base leading-relaxed pl-3 sm:pl-4 border-l-4 border-[#c9a84c] ${getHeadingText()}`}>
                   « {result.argumentaire} »
                 </p>
-                <span className="text-[9px] uppercase text-neutral-500 tracking-wider font-sans block mt-1.5 pl-5 font-bold">
-                  L'argument de vente majeur suggéré pour convaincre un collectionneur
+                <span className="text-[9px] uppercase text-neutral-500 tracking-wider font-sans block mt-1 pl-3 sm:pl-4 font-bold">
+                  Argument de vente suggéré
                 </span>
               </div>
             </div>
@@ -847,24 +862,24 @@ export default function ResultsPanel({
 
         {/* TOOL 9: TITRES */}
         {toolId === "titres" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Curation d'Œuvre</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Suggestions de Titres d'Œuvre
               </h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {result.titres?.map((t: any, i: number) => (
-                <div key={i} className={`p-4 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-[#c9a84c]/30 transition-all border ${
+                <div key={i} className={`p-3 sm:p-4 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 hover:border-[#c9a84c]/30 transition-all border ${
                   theme === "dark-gold" ? "bg-black border-white/10" : "bg-[#FAF7F2] border-stone-200"
                 }`}>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5 sm:space-y-1">
                     <span className={`text-[9px] font-mono uppercase tracking-widest block font-bold ${getGoldText()}`}>
                       Registre : {t.registre}
                     </span>
-                    <h4 className={`font-serif text-base font-bold italic ${getHeadingText()}`}>
+                    <h4 className={`font-serif text-sm sm:text-base font-bold italic ${getHeadingText()}`}>
                       « {t.nom} »
                     </h4>
                     <p className={`text-xs font-sans leading-relaxed ${getMutedText()}`}>
@@ -874,7 +889,7 @@ export default function ResultsPanel({
                   
                   <button
                     onClick={() => handleCopyText(`« ${t.nom} »`, `title-${i}`)}
-                    className={`px-3 py-1 text-[10px] tracking-wider uppercase border rounded-none self-end sm:self-auto transition-colors font-bold ${
+                    className={`px-2.5 sm:px-3 py-1 text-[10px] tracking-wider uppercase border rounded-none self-end sm:self-auto transition-colors font-bold ${
                       theme === "dark-gold"
                         ? "bg-neutral-900 hover:bg-[#c9a84c] hover:text-black text-neutral-400 border-white/10"
                         : "bg-white hover:bg-[#c9a84c] hover:text-white text-stone-600 border-stone-200"
@@ -890,43 +905,43 @@ export default function ResultsPanel({
 
         {/* TOOL 10: ARTISTES */}
         {toolId === "artistes" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Généalogie d'Art</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Filiations & Correspondances
               </h3>
             </div>
 
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 {result.artistes?.map((a: any, i: number) => (
-                  <div key={i} className={`p-4 rounded-none border ${
+                  <div key={i} className={`p-3 sm:p-4 rounded-none border ${
                     theme === "dark-gold" ? "bg-black border-white/10" : "bg-stone-50 border-stone-200"
                   }`}>
-                    <div className={`flex flex-wrap items-center justify-between border-b pb-2 mb-2 ${getBorderColor()}`}>
-                      <span className={`text-sm font-sans font-bold uppercase ${getHeadingText()}`}>
+                    <div className={`flex flex-wrap items-center justify-between border-b pb-1.5 mb-2 ${getBorderColor()}`}>
+                      <span className={`text-xs sm:text-sm font-sans font-bold uppercase ${getHeadingText()}`}>
                         {a.nom}
                       </span>
                       <span className="text-[10px] text-neutral-400 uppercase font-mono tracking-wider font-bold">
                         {a.nationalite} · {a.periode}
                       </span>
                     </div>
-                    <p className={`text-xs leading-relaxed font-sans mb-2.5 ${getBodyText()}`}>
+                    <p className={`text-xs leading-relaxed font-sans mb-2 ${getBodyText()}`}>
                       {a.lien}
                     </p>
                     <p className={`text-xs italic ${getGoldText()}`}>
-                      <strong className="font-bold">Œuvre repère à étudier :</strong> {a.oeuvre_reference}
+                      <strong className="font-bold">Œuvre repère :</strong> {a.oeuvre_reference}
                     </p>
                   </div>
                 ))}
               </div>
 
               {result.musees && result.musees.length > 0 && (
-                <div className={`pt-4 flex items-center gap-2 border-t ${getBorderColor()}`}>
+                <div className={`pt-3 sm:pt-4 flex items-center gap-2 border-t ${getBorderColor()}`}>
                   <MapPin className={`w-4 h-4 flex-shrink-0 ${getGoldText()}`} />
                   <span className={`text-xs font-sans ${getMutedText()}`}>
-                    <strong className={`${getHeadingText()} font-sans text-xs uppercase tracking-wider font-bold`}>Musées recommandés pour s'inspirer :</strong>{" "}
+                    <strong className={`${getHeadingText()} font-sans text-xs uppercase tracking-wider font-bold`}>Musées recommandés :</strong>{" "}
                     {result.musees.join(" · ")}
                   </span>
                 </div>
@@ -937,27 +952,27 @@ export default function ResultsPanel({
 
         {/* TOOL 11: EXPOSITION TEXTS */}
         {toolId === "expo" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Scénographie & Curation</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Textes d'Exposition
               </h3>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               <div>
                 <span className={`text-[10px] uppercase tracking-widest block mb-1 font-bold ${getMutedText()}`}>Concept Global d'Exposition :</span>
-                <span className={`text-lg font-serif font-medium uppercase italic ${getGoldText()}`}>
+                <span className={`text-base sm:text-lg font-serif font-medium uppercase italic ${getGoldText()}`}>
                   « {result.titre_expo} »
                 </span>
               </div>
 
               {/* Museum Cartel Block */}
-              <div className={`p-5 rounded-none relative border ${
+              <div className={`p-3.5 sm:p-5 rounded-none relative border ${
                 theme === "dark-gold" ? "border-white/10 bg-black" : "border-stone-200 bg-[#FAF7F2]"
               }`}>
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex justify-between items-center mb-2 sm:mb-3">
                   <span className={`text-[10px] uppercase tracking-widest font-bold ${getMutedText()}`}>Le Cartel d'Atelier (À coller près de l'œuvre)</span>
                   <button
                     onClick={() => handleCopyText(result.texte_cartel, "cartel")}
@@ -967,23 +982,23 @@ export default function ResultsPanel({
                     {copied === "cartel" ? <Check className={`w-4 h-4 ${getGoldText()}`} /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className={`font-serif italic text-sm leading-relaxed border-l-4 border-[#c9a84c] pl-4 ${getBodyText()}`}>
+                <p className={`font-serif italic text-xs sm:text-sm leading-relaxed border-l-4 border-[#c9a84c] pl-3 sm:pl-4 ${getBodyText()}`}>
                   {result.texte_cartel}
                 </p>
               </div>
 
               {/* Press Release communique */}
-              <div className={`p-5 rounded-none border ${
+              <div className={`p-3.5 sm:p-5 rounded-none border ${
                 theme === "dark-gold" ? "border-white/10 bg-black/40" : "border-stone-200 bg-stone-50"
               }`}>
-                <span className={`text-[10px] uppercase tracking-widest block mb-2 font-bold ${getMutedText()}`}>Communiqué de presse d'Exposition (Extrait)</span>
+                <span className={`text-[10px] uppercase tracking-widest block mb-1.5 font-bold ${getMutedText()}`}>Communiqué de presse d'Exposition (Extrait)</span>
                 <p className={`text-xs leading-relaxed font-sans ${getBodyText()}`}>
                   {result.communique}
                 </p>
               </div>
 
               {result.hashtags && result.hashtags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-2">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {result.hashtags.map((h: string, i: number) => (
                     <span key={i} className="text-xs font-mono text-neutral-500">
                       {h}
@@ -997,43 +1012,43 @@ export default function ResultsPanel({
 
         {/* TOOL 12: VERNISSAGE */}
         {toolId === "vernissage" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Promotion Événementielle</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Concept de Vernissage
               </h3>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               {/* Event card invitation */}
-              <div className={`p-6 sm:p-8 text-center rounded-none relative shadow-lg overflow-hidden border-2 border-dashed ${
+              <div className={`p-4 sm:p-6 md:p-8 text-center rounded-none relative shadow-lg overflow-hidden border-2 border-dashed ${
                 theme === "dark-gold" ? "bg-black border-[#c9a84c]" : "bg-white border-[#c9a84c]"
               }`}>
                 <div className="absolute inset-1 border border-neutral-500/5 pointer-events-none" />
                 
-                <span className={`text-[9px] uppercase tracking-[0.25em] block mb-2 font-bold ${getGoldText()}`}>Invitation Exclusive</span>
-                <h4 className={`font-serif font-light text-xl uppercase italic mb-4 ${getHeadingText()}`}>
+                <span className={`text-[9px] uppercase tracking-[0.25em] block mb-1.5 font-bold ${getGoldText()}`}>Invitation Exclusive</span>
+                <h4 className={`font-serif font-light text-lg sm:text-xl uppercase italic mb-3 ${getHeadingText()}`}>
                   {result.titre_event}
                 </h4>
                 
-                <div className="space-y-1 text-xs font-sans tracking-wide uppercase font-bold text-neutral-400">
+                <div className="space-y-0.5 text-xs font-sans tracking-wide uppercase font-bold text-neutral-400">
                   <p className={theme === "dark-gold" ? "text-neutral-200" : "text-stone-800"}>{result.date_fictive}</p>
                   <p className="text-neutral-500">{result.lieu_fictif}</p>
                 </div>
 
-                <p className={`mt-5 font-serif text-sm italic max-w-sm mx-auto leading-relaxed font-bold ${getGoldText()}`}>
+                <p className={`mt-4 font-serif text-xs sm:text-sm italic max-w-sm mx-auto leading-relaxed font-bold ${getGoldText()}`}>
                   « {result.phrase_accroche} »
                 </p>
               </div>
 
               {/* Midjourney prompt visual generator */}
-              <div className={`p-5 rounded-none border ${
+              <div className={`p-3.5 sm:p-5 rounded-none border ${
                 theme === "dark-gold" ? "border-white/10 bg-black" : "border-stone-200 bg-stone-50"
               }`}>
-                <div className="flex justify-between items-center mb-3">
+                <div className="flex justify-between items-center mb-2.5">
                   <span className={`text-[10px] uppercase tracking-widest flex items-center gap-1 font-bold ${getMutedText()}`}>
-                    Prompt de Création de Visuel d'Affiche (Midjourney)
+                    Prompt d'Affiche (Midjourney)
                   </span>
                   <button
                     onClick={() => handleCopyText(result.prompt_image_generator, "image-prompt")}
@@ -1047,11 +1062,11 @@ export default function ResultsPanel({
                     )}
                   </button>
                 </div>
-                <div className="text-xs font-mono text-emerald-600 leading-relaxed break-words bg-[#0a0a0a] p-3 rounded-none border border-white/5 select-all dark:text-emerald-400">
+                <div className="text-xs font-mono text-emerald-600 leading-relaxed break-words bg-[#0a0a0a] p-2.5 sm:p-3 rounded-none border border-white/5 select-all dark:text-emerald-400">
                   {result.prompt_image_generator}
                 </div>
-                <p className="text-[10px] text-neutral-500 mt-2 font-sans">
-                  Insérez ce prompt stylisé dans votre générateur d'images favori (Midjourney, DALL-E, Imagen) pour obtenir une affiche artistique fidèle au style de votre œuvre d'art originale.
+                <p className="text-[10px] text-neutral-500 mt-1.5 font-sans">
+                  Insérez ce prompt dans votre générateur d'images pour créer une affiche artistique fidèle au style de votre œuvre.
                 </p>
               </div>
             </div>
@@ -1060,18 +1075,18 @@ export default function ResultsPanel({
 
         {/* TOOL 13: RESEAUX SOCIAUX */}
         {toolId === "reseaux" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Stratégie Digitale</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Réseaux Sociaux & Vidéos
               </h3>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-3 sm:space-y-4">
               {result.legendes?.map((l: any, i: number) => (
-                <div key={i} className={`p-4 rounded-none border ${getBgCard()}`}>
-                  <div className="flex justify-between items-center mb-2.5">
+                <div key={i} className={`p-3 sm:p-4 rounded-none border ${getBgCard()}`}>
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono font-bold">
                       Canal : {l.plateforme}
                     </span>
@@ -1094,8 +1109,8 @@ export default function ResultsPanel({
               ))}
 
               {result.hashtags && result.hashtags.length > 0 && (
-                <div className={`border-t pt-4 ${getBorderColor()}`}>
-                  <span className={`text-[10px] uppercase tracking-widest block mb-2 font-bold ${getMutedText()}`}>Hashtags recommandés :</span>
+                <div className={`border-t pt-3 sm:pt-4 ${getBorderColor()}`}>
+                  <span className={`text-[10px] uppercase tracking-widest block mb-1.5 font-bold ${getMutedText()}`}>Hashtags recommandés :</span>
                   <p className={`text-xs font-mono leading-relaxed whitespace-pre-wrap select-all ${getGoldText()}`}>
                     {result.hashtags.join(" ")}
                   </p>
@@ -1103,7 +1118,7 @@ export default function ResultsPanel({
               )}
 
               {result.reel_idea && (
-                <div className={`p-4 border border-dashed rounded-none ${
+                <div className={`p-3 sm:p-4 border border-dashed rounded-none ${
                   theme === "dark-gold" ? "border-[#c9a84c]/30 bg-black" : "border-[#c9a84c]/40 bg-[#FAF7F2]"
                 }`}>
                   <span className={`text-[10px] font-mono uppercase tracking-widest block mb-1 font-bold ${getGoldText()}`}>
@@ -1120,24 +1135,24 @@ export default function ResultsPanel({
 
         {/* TOOL 14: ARTIST STATEMENT */}
         {toolId === "statement" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Dossier d'Artiste</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 {result.titre || "Artist Statement"}
               </h3>
             </div>
 
-            <div className="space-y-4">
-              <p className={`font-serif font-light text-base leading-loose italic whitespace-pre-line pl-5 border-l-4 border-[#c9a84c] ${getBodyText()}`}>
+            <div className="space-y-3 sm:space-y-4">
+              <p className={`font-serif text-sm sm:text-base leading-relaxed sm:leading-loose italic whitespace-pre-line text-left pl-3.5 sm:pl-5 border-l-4 border-[#c9a84c] ${getBodyText()}`}>
                 {result.texte_demarche}
               </p>
 
               {result.mots_cles_marquants && (
-                <div className={`pt-4 border-t flex flex-wrap gap-2 items-center ${getBorderColor()}`}>
-                  <span className={`text-[10px] uppercase tracking-wider mr-2 font-mono font-bold ${getMutedText()}`}>Piliers Philosophiques :</span>
+                <div className={`pt-3 sm:pt-4 border-t flex flex-wrap gap-1.5 sm:gap-2 items-center ${getBorderColor()}`}>
+                  <span className={`text-[10px] uppercase tracking-wider mr-1.5 font-mono font-bold ${getMutedText()}`}>Piliers :</span>
                   {result.mots_cles_marquants.map((k: string, i: number) => (
-                    <span key={i} className={`text-xs font-sans font-bold italic py-0.5 px-2.5 rounded-none border ${
+                    <span key={i} className={`text-xs font-sans font-bold italic py-0.5 px-2 rounded-none border ${
                       theme === "dark-gold" 
                         ? "text-[#c9a84c] bg-[#c9a84c]/5 border-[#c9a84c]/10" 
                         : "text-[#9c7d2b] bg-[#c9a84c]/5 border-[#c9a84c]/20"
@@ -1153,22 +1168,22 @@ export default function ResultsPanel({
 
         {/* TOOL 15: INSPIRATION / CONTINUATION */}
         {toolId === "inspiration" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 sm:space-y-6 animate-fadeIn">
             <div>
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Déblocage Créatif</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Prochaines Pistes de l'Atelier
               </h3>
             </div>
 
-            <div className="space-y-5">
-              <div className="space-y-3">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="space-y-2.5 sm:space-y-3">
                 {result.pistes?.map((p: any, i: number) => (
-                  <div key={i} className={`p-4 rounded-none border ${getBgCard()}`}>
-                    <span className={`text-[10px] font-mono uppercase tracking-widest block mb-1 font-bold ${getGoldText()}`}>
-                      Piste de variation #{i + 1}
+                  <div key={i} className={`p-3 sm:p-4 rounded-none border ${getBgCard()}`}>
+                    <span className={`text-[10px] font-mono uppercase tracking-widest block mb-0.5 font-bold ${getGoldText()}`}>
+                      Piste #{i + 1}
                     </span>
-                    <h4 className={`text-sm font-sans font-black uppercase mb-1 ${getHeadingText()}`}>
+                    <h4 className={`text-xs sm:text-sm font-sans font-black uppercase mb-1 ${getHeadingText()}`}>
                       {p.concept}
                     </h4>
                     <p className={`text-xs font-sans leading-relaxed ${getMutedText()}`}>
@@ -1179,13 +1194,13 @@ export default function ResultsPanel({
               </div>
 
               {result.defi && (
-                <div className={`p-5 text-center rounded-none relative overflow-hidden shadow-md border ${
+                <div className={`p-4 sm:p-5 text-center rounded-none relative overflow-hidden shadow-md border ${
                   theme === "dark-gold" ? "border-[#c9a84c]/40 bg-[#1a1a15]" : "border-[#c9a84c]/40 bg-[#fdfbfa]"
                 }`}>
-                  <span className={`text-[10px] font-mono tracking-[0.25em] uppercase block mb-2 font-bold ${getGoldText()}`}>
+                  <span className={`text-[10px] font-mono tracking-[0.25em] uppercase block mb-1.5 font-bold ${getGoldText()}`}>
                     Le Défi Créatif d'Atelier
                   </span>
-                  <p className={`text-sm font-sans italic leading-relaxed max-w-md mx-auto font-bold ${getHeadingText()}`}>
+                  <p className={`text-xs sm:text-sm font-sans italic leading-relaxed max-w-md mx-auto font-bold ${getHeadingText()}`}>
                     "{result.defi}"
                   </p>
                 </div>
@@ -1196,27 +1211,27 @@ export default function ResultsPanel({
 
         {/* TOOL 16: POÉSIE (ELEGANT VINTAGE SHEET PRINT) */}
         {toolId === "poesie" && (
-          <div className="space-y-8 py-4 animate-fadeIn">
+          <div className="space-y-5 sm:space-y-8 py-2 sm:py-4 animate-fadeIn">
             <div className="text-center">
               <p className={`text-[10px] tracking-[0.35em] uppercase font-sans font-bold ${getGoldText()}`}>Inspiration Poétique</p>
-              <h3 className={`text-2xl sm:text-3xl font-serif font-light tracking-tight uppercase mt-1.5 ${getHeadingText()}`}>
+              <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 « {result.titre_poeme} »
               </h3>
             </div>
 
             {/* Haiku view */}
-            <div className={`text-center max-w-sm mx-auto p-5 border-y border-dashed ${
+            <div className={`text-center max-w-sm mx-auto p-3.5 sm:p-5 border-y border-dashed ${
               theme === "dark-gold" ? "border-[#c9a84c]/30 bg-black/40" : "border-[#c9a84c]/40 bg-[#FAF7F2]"
             }`}>
-              <span className={`text-[9px] uppercase tracking-widest block mb-3.5 font-mono font-bold ${getGoldText()}`}>Haïku suspendu (5-7-5)</span>
-              <p className={`font-serif text-[17px] leading-loose italic whitespace-pre-line font-medium ${getHeadingText()}`}>
+              <span className={`text-[9px] uppercase tracking-widest block mb-2 sm:mb-3.5 font-mono font-bold ${getGoldText()}`}>Haïku suspendu (5-7-5)</span>
+              <p className={`font-serif text-sm sm:text-base md:text-lg leading-relaxed sm:leading-loose italic whitespace-pre-line font-medium ${getHeadingText()}`}>
                 {result.haiku}
               </p>
             </div>
 
             {/* Free verse poem with subtle background lines */}
-            <div className="text-center max-w-md mx-auto py-4">
-              <p className={`font-serif text-[15px] leading-loose whitespace-pre-line italic text-stone-300 ${getBodyText()}`}>
+            <div className="text-center max-w-md mx-auto py-2 sm:py-4">
+              <p className={`font-serif text-xs sm:text-sm md:text-base leading-relaxed sm:leading-loose whitespace-pre-line italic ${getBodyText()}`}>
                 {result.texte_poetique}
               </p>
             </div>
