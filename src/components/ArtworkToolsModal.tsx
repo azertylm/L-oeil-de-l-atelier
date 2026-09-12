@@ -8,7 +8,7 @@ import {
   Sparkles, X, CheckCircle2, Play, Search,
   Palette, Layers, Feather, Compass, DollarSign,
   Award, Home, Type, Library, FileText, Wine,
-  Share2, Scroll, Zap, PenTool
+  Share2, Scroll, Zap, PenTool, Tag, QrCode
 } from "lucide-react";
 import { TOOLS, CATEGORIES } from "../data.js";
 import { Tool } from "../types.js";
@@ -22,6 +22,7 @@ interface ArtworkToolsModalProps {
   theme: "dark-gold" | "light";
   onRunAllAnalyses?: () => void;
   onOpenGlobalReport?: () => void;
+  onOpenQrSalesModal?: () => void;
   isSubscribed?: boolean;
   hasArtwork?: boolean;
   onOpenSubscriptionModal?: () => void;
@@ -57,7 +58,8 @@ export default function ArtworkToolsModal({
   isSubscribed,
   hasArtwork,
   onOpenSubscriptionModal,
-  onOpenGlobalReport
+  onOpenGlobalReport,
+  onOpenQrSalesModal
 }: ArtworkToolsModalProps) {
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -105,6 +107,21 @@ export default function ArtworkToolsModal({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {onOpenQrSalesModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenQrSalesModal();
+                  onClose();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider shadow-md cursor-pointer transition-all"
+                title="Générer des cartels muraux et des QR codes de vente"
+              >
+                <Tag className="w-3.5 h-3.5" />
+                <span>Cartels & QR Vente</span>
+              </button>
+            )}
+
             {onOpenGlobalReport && completedCount > 0 && (
               <button
                 type="button"

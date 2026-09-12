@@ -28,6 +28,7 @@ interface ExplanationSectionProps {
   onOpenCollectorSales?: () => void;
   onOpenPressSocial?: () => void;
   onOpenProfileModal?: () => void;
+  onOpenQrSalesModal?: () => void;
 }
 
 export default function ExplanationSection({
@@ -38,6 +39,7 @@ export default function ExplanationSection({
   onOpenCollectorSales,
   onOpenPressSocial,
   onOpenProfileModal,
+  onOpenQrSalesModal,
 }: ExplanationSectionProps) {
   // Masqué par défaut comme demandé par l'utilisateur
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -231,6 +233,42 @@ export default function ExplanationSection({
                 Disponibles à tout moment dans le menu ou ci-dessous
               </span>
             </div>
+
+            {/* Passerelle Cartels Muraux & QR Vente */}
+            {onOpenQrSalesModal && (
+              <div 
+                onClick={onOpenQrSalesModal}
+                className={`p-4 border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all hover:border-[#c9a84c] shadow-md ${
+                  isDark ? "bg-gradient-to-r from-[#17140b] via-[#211b0e] to-[#121008] border-[#c9a84c]/80 text-white" : "bg-gradient-to-r from-amber-100 via-amber-50 to-white border-[#c9a84c] text-black"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 flex items-center justify-center bg-[#c9a84c] text-black font-black text-lg flex-shrink-0">
+                    🏷️
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h5 className="font-serif font-bold text-xs sm:text-sm uppercase text-[#c9a84c]">
+                        Cartels Muraux & QR Codes de Vente Directe
+                      </h5>
+                      <span className="text-[9px] font-mono bg-emerald-600 text-white font-bold px-1.5 py-0.5 uppercase">
+                        50 Innovations
+                      </span>
+                    </div>
+                    <p className={`text-xs font-sans mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
+                      Impression de cartels muraux normalisés avec QR codes, audioguide vocal immersif pour les visiteurs et passerelle de vente directe discrète.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider transition-colors flex-shrink-0 self-end sm:self-center"
+                >
+                  Générer Cartel & QR →
+                </button>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {/* Outils d'Atelier */}

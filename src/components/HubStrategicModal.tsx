@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { X, Layers, Sparkles, Building2, PartyPopper, Briefcase, Radio, ArrowRight } from "lucide-react";
+import { X, Layers, Sparkles, Building2, PartyPopper, Briefcase, Radio, ArrowRight, QrCode, Tag } from "lucide-react";
 import { TOOLS } from "../data.js";
 
 interface HubStrategicModalProps {
@@ -16,6 +16,7 @@ interface HubStrategicModalProps {
   onOpenVernissageModal: () => void;
   onOpenCollectorSales: () => void;
   onOpenPressSocial: () => void;
+  onOpenQrSalesModal?: () => void;
   onSelectTool: (toolId: string) => void;
   activeToolId: string;
   cache: Record<string, any>;
@@ -30,6 +31,7 @@ export default function HubStrategicModal({
   onOpenVernissageModal,
   onOpenCollectorSales,
   onOpenPressSocial,
+  onOpenQrSalesModal,
   onSelectTool,
   activeToolId,
   cache
@@ -84,6 +86,52 @@ export default function HubStrategicModal({
 
         {/* Content */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+          {/* Nouveau Banner Tripartite : Cartels & QR de Vente Directe */}
+          {onOpenQrSalesModal && (
+            <div 
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                onClose();
+                onOpenQrSalesModal();
+              }}
+              className={`p-4 border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-all hover:border-white shadow-lg ${
+                isDark 
+                  ? "bg-gradient-to-r from-[#17140b] via-[#241d0e] to-[#121008] border-[#c9a84c] text-white" 
+                  : "bg-gradient-to-r from-amber-100 via-amber-50 to-white border-[#c9a84c] text-black"
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 flex items-center justify-center bg-[#c9a84c] text-black font-black text-lg flex-shrink-0 shadow-md">
+                  🏷️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-serif font-bold text-sm sm:text-base uppercase tracking-wide">
+                      Passerelle Artistes • Galeristes • Visiteurs
+                    </h4>
+                    <span className="text-[10px] font-mono bg-emerald-600 text-white font-bold px-2 py-0.5 uppercase">
+                      Cartels & QR Vente
+                    </span>
+                    <span className="text-[10px] font-mono bg-[#c9a84c] text-black font-black px-2 py-0.5 uppercase">
+                      50 Innovations
+                    </span>
+                  </div>
+                  <p className={`text-xs font-sans mt-1 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
+                    Générez des cartels muraux prêts à imprimer avec QR codes de vente, audioguide vocal pour les visiteurs et options d'achat discrètes.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="px-5 py-2.5 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider transition-colors flex-shrink-0 shadow-md self-end sm:self-center"
+              >
+                Ouvrir le Module QR & Cartels →
+              </button>
+            </div>
+          )}
+
           {/* 5 Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {/* Pôle 1 : Atelier */}

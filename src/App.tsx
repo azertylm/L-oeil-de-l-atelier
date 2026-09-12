@@ -7,7 +7,8 @@ import React, { useState, useEffect } from "react";
 import { 
   Sparkles, BookOpen, Trash2, ArrowLeft, Paintbrush, HelpCircle, 
   AlertTriangle, Plus, FolderPlus, Heart, Check, X, Calendar, Eye, 
-  Layers, FileText, RefreshCw, Loader2, Crown, Lock, User, Images
+  Layers, FileText, RefreshCw, Loader2, Crown, Lock, User, Images,
+  QrCode, Tag
 } from "lucide-react";
 import { ArtistProfile, HistoryItem, CustomArtwork } from "./types.js";
 import { TOOLS } from "./data.js";
@@ -29,6 +30,7 @@ import PressSocialBridgeModal from "./components/PressSocialBridgeModal.js";
 import ArtworkToolsModal from "./components/ArtworkToolsModal.js";
 import AddFromGalleryModal from "./components/AddFromGalleryModal.js";
 import GlobalReportExportModal from "./components/GlobalReportExportModal.js";
+import QrSalesCartelModal from "./components/QrSalesCartelModal.js";
 
 const DEFAULT_PROFILE: ArtistProfile = {
   name: "",
@@ -155,6 +157,8 @@ export default function App() {
   const [isPressSocialOpen, setIsPressSocialOpen] = useState<boolean>(false);
   const [isAddFromGalleryOpen, setIsAddFromGalleryOpen] = useState<boolean>(false);
   const [isGlobalReportModalOpen, setIsGlobalReportModalOpen] = useState<boolean>(false);
+  const [isQrSalesModalOpen, setIsQrSalesModalOpen] = useState<boolean>(false);
+  const [qrSalesInitialTab, setQrSalesInitialTab] = useState<"generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels">("generator");
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; currentToolName: string } | null>(null);
 
   // Gallery States
@@ -1210,6 +1214,17 @@ export default function App() {
               <span>{isSubscriptionActive ? "Atelier Pro (Actif)" : "Atelier Pro"}</span>
             </button>
 
+            {/* Cartels Muraux & QR Codes de Vente Directe */}
+            <button
+              id="qr-sales-cartel-btn"
+              onClick={() => setIsQrSalesModalOpen(true)}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border bg-[#c9a84c] text-black border-[#c9a84c] hover:bg-white cursor-pointer"
+              title="Générateur de cartels muraux prêts à imprimer avec QR codes de vente et 50 innovations marché"
+            >
+              <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
+              <span className="hidden xs:inline">Cartels & QR Vente</span>
+            </button>
+
             {/* Dossier Global (16 Outils) Export Button - Visible when analyses exist */}
             {Object.keys(cache).length > 0 && (
               <button
@@ -1338,6 +1353,21 @@ export default function App() {
                     <User className="w-3.5 h-3.5 text-[#c9a84c]" />
                     <span>Profil Artiste {profile.name.trim() ? `(« ${profile.name} »)` : "(optionnel)"}</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQrSalesInitialTab("generator");
+                      setIsQrSalesModalOpen(true);
+                    }}
+                    className={`px-3.5 py-1.5 text-xs font-mono font-bold uppercase border transition-all flex items-center gap-1.5 ${
+                      theme === "dark-gold"
+                        ? "bg-[#c9a84c]/20 text-[#c9a84c] border-[#c9a84c]/50 hover:bg-[#c9a84c] hover:text-black"
+                        : "bg-amber-100 text-amber-900 border-amber-300 hover:bg-[#c9a84c] hover:text-black"
+                    }`}
+                  >
+                    <span>🏷️ Cartels Muraux, QR & Livre d'Or</span>
+                  </button>
                 </div>
               </div>
 
@@ -1350,6 +1380,7 @@ export default function App() {
                 onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
                 onOpenPressSocial={() => setIsPressSocialOpen(true)}
                 onOpenProfileModal={() => setIsProfileModalOpen(true)}
+                onOpenQrSalesModal={() => setIsQrSalesModalOpen(true)}
               />
 
               {/* Loader indicator for presets or batch imports */}
@@ -2063,6 +2094,7 @@ export default function App() {
                     onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
                     onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
                     onOpenPressSocial={() => setIsPressSocialOpen(true)}
+                    onOpenQrSalesModal={() => setIsQrSalesModalOpen(true)}
                     batchProgress={batchProgress}
                     onRerunTool={handleRerunTool}
                     onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
@@ -2204,6 +2236,7 @@ export default function App() {
         onRunAllAnalyses={handleRunAllAnalyses}
         onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
         onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
+        onOpenQrSalesModal={() => setIsQrSalesModalOpen(true)}
       />
 
       {/* Artist Profile Modal */}
@@ -2227,9 +2260,27 @@ export default function App() {
         onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
         onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
         onOpenPressSocial={() => setIsPressSocialOpen(true)}
+        onOpenQrSalesModal={() => setIsQrSalesModalOpen(true)}
         onSelectTool={handleSelectToolFromTop}
         activeToolId={activeToolId}
         cache={cache}
+      />
+
+      {/* Modal Passerelle Artistes • Galeristes • Visiteurs (Cartels Muraux & QR Codes de Vente) */}
+      <QrSalesCartelModal
+        isOpen={isQrSalesModalOpen}
+        onClose={() => setIsQrSalesModalOpen(false)}
+        theme={theme}
+        profile={profile}
+        activeArtworkImage={imageBase64 || previewUrl}
+        activeArtworkTitle={selectedArtwork?.title || saveTitle || (activeSeries.length > 0 ? activeSeries[0].title : "Œuvre d'Atelier")}
+        activeArtworkMedium={selectedArtwork?.medium || saveMedium || profile.style || "Technique Mixte"}
+        activeArtworkYear={selectedArtwork?.year || saveYear || new Date().getFullYear().toString()}
+        activeArtworkDimensions={(selectedArtwork && 'dimensions' in selectedArtwork) ? selectedArtwork.dimensions : undefined}
+        activeSeries={activeSeries}
+        cache={cache}
+        onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
+        initialTab={qrSalesInitialTab}
       />
 
       {/* Modal pour ajouter facilement des photos déjà importées à la série */}

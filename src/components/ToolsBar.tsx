@@ -44,6 +44,7 @@ interface ToolsBarProps {
   onOpenCollectorSales?: () => void;
   onOpenPressSocial?: () => void;
   onOpenGlobalReport?: () => void;
+  onOpenQrSalesModal?: () => void;
   batchProgress?: { current: number; total: number; currentToolName: string } | null;
   onRerunTool?: (id: string) => void;
 }
@@ -101,6 +102,7 @@ export default function ToolsBar({
   onOpenCollectorSales,
   onOpenPressSocial,
   onOpenGlobalReport,
+  onOpenQrSalesModal,
   batchProgress,
   onRerunTool
 }: ToolsBarProps) {
@@ -251,14 +253,52 @@ export default function ToolsBar({
         )}
       </div>
 
-      {/* 4 Dedicated Strategic Launchers (Passerelle, Vernissages, Ventes, Presse) */}
-      {(onOpenGalleryBridge || onOpenVernissageModal || onOpenCollectorSales || onOpenPressSocial) && (
+      {/* Pôles Métiers & Marché de l'Art + Cartels & QR de Vente */}
+      {(onOpenQrSalesModal || onOpenGalleryBridge || onOpenVernissageModal || onOpenCollectorSales || onOpenPressSocial) && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between pb-1 border-b border-[#c9a84c]/20">
             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#c9a84c]">
-              4 Pôles Métiers & Marché de l'Art (20 Outils Stratégiques)
+              Passerelle Écosystème & Vente Directe
             </span>
           </div>
+
+          {/* Lanceur Prioritaire : Cartels Muraux & QR Codes de Vente Directe */}
+          {onOpenQrSalesModal && (
+            <div 
+              onClick={onOpenQrSalesModal}
+              className={`p-3.5 sm:p-4 border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all duration-300 shadow-lg ${
+                isDark 
+                  ? "bg-gradient-to-r from-[#17140b] via-[#211b0e] to-[#121008] hover:border-white border-[#c9a84c] text-white" 
+                  : "bg-gradient-to-r from-amber-100/90 via-amber-50 to-white hover:border-stone-900 border-[#c9a84c] text-black"
+              }`}
+            >
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center bg-[#c9a84c] text-black font-black text-base flex-shrink-0 shadow-sm">
+                  🏷️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs sm:text-sm font-serif font-bold tracking-wide uppercase">
+                      Cartels Muraux & QR Codes de Vente
+                    </span>
+                    <span className="text-[9px] font-mono bg-emerald-600 text-white font-bold px-1.5 py-0.5 uppercase">
+                      Vente • Visiteurs • Galeries
+                    </span>
+                  </div>
+                  <p className={`text-[11px] sm:text-xs font-sans mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
+                    Génération de cartels imprimables, audioguide IA voix vivante pour les visiteurs, et réservation discrète en salle.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="px-4 py-2 bg-[#c9a84c] hover:bg-white text-black font-mono font-black text-xs uppercase tracking-wider transition-colors flex-shrink-0 shadow-md self-end sm:self-center"
+              >
+                Générer Cartel & QR →
+              </button>
+            </div>
+          )}
 
           {onOpenGalleryBridge && (
             <div 
