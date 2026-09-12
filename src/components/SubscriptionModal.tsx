@@ -316,9 +316,9 @@ export default function SubscriptionModal({
           {/* If already subscribed, show Active Status banner */}
           {isSubscribed ? (
             <div className={`p-5 border space-y-4 text-center ${
-              isDark ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-300" : "bg-emerald-50 border-emerald-200 text-emerald-800"
+              isDark ? "bg-[#c9a84c]/10 border-[#c9a84c]/50 text-[#c9a84c]" : "bg-amber-50 border-[#c9a84c] text-[#8a6a1e]"
             }`}>
-              <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+              <div className="w-12 h-12 rounded-full bg-[#c9a84c]/20 text-[#c9a84c] flex items-center justify-center mx-auto border border-[#c9a84c]/40">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>

@@ -7,13 +7,15 @@ import React, { useState, useEffect } from "react";
 import { 
   Sparkles, BookOpen, Trash2, ArrowLeft, Paintbrush, HelpCircle, 
   AlertTriangle, Plus, FolderPlus, Heart, Check, X, Calendar, Eye, 
-  Layers, FileText, RefreshCw, Loader2, Crown, Lock 
+  Layers, FileText, RefreshCw, Loader2, Crown, Lock, User
 } from "lucide-react";
 import { ArtistProfile, HistoryItem, CustomArtwork } from "./types.js";
 import { TOOLS } from "./data.js";
 import { PRESET_ARTWORKS, getArtworkBase64, PresetArtwork } from "./presets.js";
 import ArtistProfileForm from "./components/ArtistProfileForm.js";
-import AppDescriptionBanner from "./components/AppDescriptionBanner.js";
+import ArtistProfileModal from "./components/ArtistProfileModal.js";
+import ExplanationSection from "./components/ExplanationSection.js";
+import HubStrategicModal from "./components/HubStrategicModal.js";
 import DropZone from "./components/DropZone.js";
 import HistoryModal from "./components/HistoryModal.js";
 import ResultsPanel from "./components/ResultsPanel.js";
@@ -142,6 +144,9 @@ export default function App() {
   const [isSubscriptionActive, setIsSubscriptionActive] = useState<boolean>(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState<boolean>(false);
   const [isArtworkToolsModalOpen, setIsArtworkToolsModalOpen] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+  const [isHubModalOpen, setIsHubModalOpen] = useState<boolean>(false);
+  const [isExamplesOpen, setIsExamplesOpen] = useState<boolean>(false);
   const [isGalleryBridgeOpen, setIsGalleryBridgeOpen] = useState<boolean>(false);
   const [isVernissageModalOpen, setIsVernissageModalOpen] = useState<boolean>(false);
   const [isCollectorSalesOpen, setIsCollectorSalesOpen] = useState<boolean>(false);
@@ -1121,20 +1126,50 @@ export default function App() {
               {theme === "dark-gold" ? "Mode Clair" : "Noir & Or"}
             </button>
 
+            {/* Profil Artiste Trigger Button */}
+            <button
+              onClick={() => setIsProfileModalOpen(true)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
+                profile.name.trim()
+                  ? "bg-[#c9a84c] text-black border-[#c9a84c] hover:bg-white"
+                  : (theme === "dark-gold"
+                      ? "bg-black text-[#c9a84c] border-[#c9a84c]/60 hover:bg-[#c9a84c] hover:text-black"
+                      : "bg-white text-stone-900 border-stone-300 hover:bg-stone-50")
+              }`}
+              title="Renseigner ou modifier votre profil d'artiste"
+            >
+              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>{profile.name.trim() ? profile.name : "Profil Artiste"}</span>
+            </button>
+
+            {/* Hub Stratégique - 5 Pôles & 36 Outils IA */}
+            <button
+              onClick={() => setIsHubModalOpen(true)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
+                theme === "dark-gold"
+                  ? "bg-[#14120a] text-white border-[#c9a84c]/60 hover:border-[#c9a84c] hover:text-[#c9a84c]"
+                  : "bg-white text-stone-900 border-stone-300 hover:border-[#c9a84c]"
+              }`}
+              title="Ouvrir le Hub Stratégique des 5 Pôles et 36 Outils d'Art"
+            >
+              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a84c]" />
+              <span>36 Outils IA</span>
+            </button>
+
             {/* Subscription Pro Trigger Button (3 € / mois ou 20 € / an) */}
             <button
               onClick={() => setIsSubscriptionModalOpen(true)}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
                 isSubscriptionActive
-                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500 hover:text-black"
+                  ? "bg-[#c9a84c] text-black border-[#c9a84c] hover:bg-[#dfbd5e] shadow-[0_0_12px_rgba(201,168,76,0.35)]"
                   : (theme === "dark-gold"
-                      ? "bg-[#c9a84c]/20 text-[#c9a84c] border-[#c9a84c]/60 hover:bg-[#c9a84c] hover:text-black"
-                      : "bg-amber-50 text-[#9c7d2b] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black")
+                      ? "bg-[#14120a] text-[#c9a84c] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black shadow-sm"
+                      : "bg-amber-50 text-[#9c7d2b] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black shadow-sm")
               }`}
-              title="Offre d'abonnement : 3 € / mois ou 20 € / an (1ère année)"
+              title="Abonnement Atelier Pro : 3 € / mois ou 20 € / an (1ère année)"
             >
-              <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a84c]" />
-              <span>{isSubscriptionActive ? "Atelier Pro Actif" : "Offre Pro (3€/m | 20€/an)"}</span>
+              <Crown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isSubscriptionActive ? "text-black" : "text-[#c9a84c]"}`} />
+              <span>{isSubscriptionActive ? "Atelier Pro (Actif)" : "Atelier Pro"}</span>
             </button>
 
             {/* Donation System Trigger */}
@@ -1165,330 +1200,104 @@ export default function App() {
           </div>
         </header>
 
-        {/* Hub Stratégique - 5 Pôles d'Excellence Métiers (36 Outils IA au Total) */}
-        <div className={`mb-6 sm:mb-8 p-4 sm:p-5 border transition-all duration-300 ${
-          theme === "dark-gold" 
-            ? "bg-[#0c0c0c] border-[#c9a84c]/60 shadow-lg" 
-            : "bg-amber-50/50 border-[#c9a84c]/60 shadow-sm"
-        }`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 mb-3.5 border-b border-[#c9a84c]/30">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest bg-[#c9a84c] text-black px-2.5 py-0.5">
-                HUB STRATÉGIQUE
-              </span>
-              <h2 className={`text-xs sm:text-sm font-serif font-bold uppercase tracking-wider ${
-                theme === "dark-gold" ? "text-white" : "text-stone-900"
-              }`}>
-                Les 5 Piliers Métiers de l'Artiste (36 Outils Spécialisés)
-              </h2>
-            </div>
-            <span className={`text-[10px] font-mono font-bold ${theme === "dark-gold" ? "text-[#c9a84c]" : "text-[#9c7d2b]"}`}>
-              Accès direct aux 16 Outils d'Atelier & aux 4 Passerelles Métiers
-            </span>
-          </div>
-
-          {/* 5 Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {/* 0: Suite Principale des 16 Outils d'Analyse Plastique */}
-            <button
-              type="button"
-              onClick={() => setIsArtworkToolsModalOpen(true)}
-              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm relative overflow-hidden ${
-                theme === "dark-gold"
-                  ? "bg-[#14120c] hover:bg-[#1c180e] border-[#c9a84c] text-white"
-                  : "bg-white hover:bg-amber-100/60 border-[#c9a84c] text-stone-900"
-              }`}
-            >
-              <div className="absolute top-0 right-0 w-12 h-12 bg-[#c9a84c]/10 rounded-bl-full pointer-events-none" />
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🎨</span>
-                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
-                      16 Outils d'Atelier
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5 uppercase">
-                    16 OUTILS
-                  </span>
-                </div>
-                <p className={`text-[11px] font-sans leading-relaxed ${
-                  theme === "dark-gold" ? "text-neutral-300" : "text-stone-700"
-                }`}>
-                  Style, palette chromatique, cotation, certificat COA, cartel, poésie, critique & statement.
-                </p>
-              </div>
-              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                <span>Ouvrir les 16 Outils</span>
-                <span>→</span>
-              </div>
-            </button>
-
-            {/* 1: Passerelle Galeries */}
-            <button
-              type="button"
-              onClick={() => setIsGalleryBridgeOpen(true)}
-              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
-                theme === "dark-gold"
-                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
-                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🏛️</span>
-                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
-                      Passerelle Galeries
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
-                    5 OUTILS
-                  </span>
-                </div>
-                <p className={`text-[11px] font-sans leading-relaxed ${
-                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
-                }`}>
-                  Dossiers de candidature, matchmaking directeurs, bourse aux murs & salons d'art.
-                </p>
-              </div>
-              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                <span>Ouvrir la Passerelle</span>
-                <span>→</span>
-              </div>
-            </button>
-
-            {/* 2: Soirées & Vernissages */}
-            <button
-              type="button"
-              onClick={() => setIsVernissageModalOpen(true)}
-              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
-                theme === "dark-gold"
-                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
-                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🥂</span>
-                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
-                      Soirées & Vernissages
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
-                    5 OUTILS
-                  </span>
-                </div>
-                <p className={`text-[11px] font-sans leading-relaxed ${
-                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
-                }`}>
-                  QR cartels connectés, audioguide vocal IA, invitations VIP, RSVP & traiteur.
-                </p>
-              </div>
-              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                <span>Ouvrir les Vernissages</span>
-                <span>→</span>
-              </div>
-            </button>
-
-            {/* 3: Ventes & Acheteurs */}
-            <button
-              type="button"
-              onClick={() => setIsCollectorSalesOpen(true)}
-              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
-                theme === "dark-gold"
-                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
-                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">💼</span>
-                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
-                      Ventes & Acheteurs
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
-                    5 OUTILS
-                  </span>
-                </div>
-                <p className={`text-[11px] font-sans leading-relaxed ${
-                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
-                }`}>
-                  Défiscalisation Art 238 bis, factures Marcus, salon VIP & expédition d'art.
-                </p>
-              </div>
-              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                <span>Ouvrir les Ventes</span>
-                <span>→</span>
-              </div>
-            </button>
-
-            {/* 4: Presse & Réseaux */}
-            <button
-              type="button"
-              onClick={() => setIsPressSocialOpen(true)}
-              className={`p-3.5 border text-left flex flex-col justify-between transition-all duration-300 group hover:border-[#c9a84c] shadow-sm ${
-                theme === "dark-gold"
-                  ? "bg-black hover:bg-[#141414] border-white/10 text-white"
-                  : "bg-white hover:bg-amber-50/80 border-stone-200 text-stone-900"
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">📣</span>
-                    <span className="text-xs font-serif font-bold group-hover:text-[#c9a84c] transition-colors">
-                      Presse & Subventions
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono bg-[#c9a84c] text-black font-black px-1.5 py-0.5">
-                    5 OUTILS
-                  </span>
-                </div>
-                <p className={`text-[11px] font-sans leading-relaxed ${
-                  theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
-                }`}>
-                  Communiqué de presse muséal, scripts Reels TikTok, SEO & bourses DRAC/CNAP.
-                </p>
-              </div>
-              <div className="text-[10px] font-mono font-bold text-[#c9a84c] mt-3 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                <span>Ouvrir Médias & Presse</span>
-                <span>→</span>
-              </div>
-            </button>
-          </div>
-
-          {/* Quick 16-Tool Direct Access Bar (Without Scrolling Down) */}
-          <div className="mt-4 pt-3 border-t border-[#c9a84c]/20">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#c9a84c] font-black">
-                  ⚡ Lancement Rapide 1-Clic des 16 Outils d'Atelier (Direct depuis le Hub) :
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsArtworkToolsModalOpen(true)}
-                  className="text-[10px] font-mono text-[#c9a84c] hover:underline font-bold"
-                >
-                  [+] Ouvrir la Grille Détaillée
-                </button>
-              </div>
-            </div>
-
-            {/* 16 Interactive Tool Chips */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-1.5">
-              {TOOLS.map((tool) => {
-                const isSelected = activeToolId === tool.id;
-                const isReady = !!cache[tool.id];
-
-                return (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    onClick={() => handleSelectToolFromTop(tool.id)}
-                    title={tool.description}
-                    className={`px-2 py-1.5 border text-left flex items-center justify-between gap-1.5 transition-all text-[11px] font-mono ${
-                      isSelected
-                        ? "bg-[#c9a84c] text-black border-[#c9a84c] font-bold shadow-sm"
-                        : isReady
-                        ? theme === "dark-gold"
-                          ? "bg-[#161616] text-amber-200 border-[#c9a84c]/40 hover:border-[#c9a84c]"
-                          : "bg-white text-amber-900 border-[#c9a84c]/40 hover:border-[#c9a84c]"
-                        : theme === "dark-gold"
-                        ? "bg-black/60 text-neutral-400 border-white/10 hover:text-white hover:border-[#c9a84c]/60"
-                        : "bg-white/80 text-stone-600 border-stone-200 hover:text-black hover:border-[#c9a84c]"
-                    }`}
-                  >
-                    <span className="truncate">{tool.label}</span>
-                    {isReady ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" title="Analyse prête" />
-                    ) : (
-                      <span className="text-[9px] opacity-40">›</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Presentation & App Guide Banner */}
-        <AppDescriptionBanner 
-          theme={theme} 
-          onOpenArtworkTools={() => setIsArtworkToolsModalOpen(true)}
-          onOpenGalleryBridge={() => setIsGalleryBridgeOpen(true)}
-          onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
-          onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
-          onOpenPressSocial={() => setIsPressSocialOpen(true)}
-        />
-
-        {/* Configuration panel */}
-        <div className="mb-6 sm:mb-8">
-          <div className="mb-2.5 sm:mb-3 flex items-center gap-2.5 sm:gap-3 border-b pb-2 border-[#c9a84c]/30">
-            <span className="bg-[#c9a84c] text-black font-mono font-bold text-[11px] sm:text-xs px-2.5 py-0.5 sm:py-1 uppercase tracking-wider flex-shrink-0 whitespace-nowrap">
-              Étape 1 sur 4
-            </span>
-            <div className="min-w-0">
-              <h3 className={`text-xs sm:text-sm md:text-base font-serif font-bold uppercase tracking-wider truncate ${
-                theme === "dark-gold" ? "text-white" : "text-stone-900"
-              }`}>
-                Profil & Intention de l'Artiste
-              </h3>
-              <p className={`text-[11px] sm:text-xs font-sans mt-0.5 line-clamp-1 sm:line-clamp-none ${
-                theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
-              }`}>
-                Renseignez vos coordonnées et votre univers pour adapter les analyses.
-              </p>
-            </div>
-          </div>
-
-          <ArtistProfileForm
-            profile={profile}
-            setProfile={setProfile}
-            customApiKey={customApiKey}
-            setCustomApiKey={setCustomApiKey}
-            theme={theme}
-          />
-        </div>
-
         {/* Main Interface Workspace */}
         <main id="main-workspace-anchor" className="flex-1 flex flex-col justify-center">
           {!previewUrl ? (
-            /* Upload Screen & Art Library */
-            <div id="artwork-selector-section" className="animate-fadeIn py-2 sm:py-4 space-y-8 sm:space-y-10">
+            /* Upload Screen & Departure View - Simple, Épuré et Intuitif */
+            <div id="artwork-selector-section" className="animate-fadeIn py-2 sm:py-4 space-y-6 sm:space-y-8">
               
-              {/* Step 2 Chapter Heading */}
-              <div className="flex items-center gap-2.5 sm:gap-3 border-b pb-2.5 border-[#c9a84c]/30">
-                <span className="bg-[#c9a84c] text-black font-mono font-bold text-[11px] sm:text-xs px-2.5 py-0.5 sm:py-1 uppercase tracking-wider flex-shrink-0 whitespace-nowrap">
-                  Étape 2 sur 4
-                </span>
-                <div className="min-w-0">
-                  <h3 className={`text-xs sm:text-sm md:text-base font-serif font-bold uppercase tracking-wider ${
-                    theme === "dark-gold" ? "text-white" : "text-stone-900"
+              {/* 1. PREMIER ÉLÉMENT : DÉPÔT IMMÉDIAT DE PHOTOS OU IMAGES */}
+              <div className="space-y-4">
+                <div className="text-center max-w-2xl mx-auto space-y-1 sm:space-y-2">
+                  <span className="bg-[#c9a84c] text-black font-mono font-bold text-[10px] sm:text-xs px-3 py-0.5 uppercase tracking-widest inline-block">
+                    DÉMARRAGE DIRECT
+                  </span>
+                  <h2 className={`text-xl sm:text-2xl md:text-3xl font-serif font-bold uppercase tracking-tight ${
+                    theme === "dark-gold" ? "text-white" : "text-stone-950"
                   }`}>
-                    Insérer l'Image d'une Œuvre ou Constituer une Série de Vernissage
-                  </h3>
-                  <p className={`text-[11px] sm:text-xs font-sans mt-0.5 ${
+                    Déposez Vos Photos ou Fichiers Images
+                  </h2>
+                  <p className={`text-xs sm:text-sm font-sans ${
                     theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
                   }`}>
-                    Glissez-déposez le visuel d'une création unique ou sélectionnez plusieurs toiles pour simuler un vernissage complet.
+                    Glissez-déposez le visuel d'une création unique ou sélectionnez plusieurs toiles pour lancer les analyses.
                   </p>
+                </div>
+
+                {/* Zone de Dépôt Principale */}
+                <div>
+                  <DropZone 
+                    onFileSelected={handleFileSelected} 
+                    onMultipleFilesSelected={handleMultipleFilesSelected} 
+                    theme={theme} 
+                  />
+                </div>
+
+                {/* Boutons discrets sous la boîte de dépôt pour ceux qui souhaitent tester ou ouvrir leur galerie */}
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExamplesOpen(!isExamplesOpen || galleryTab !== "presets");
+                      setGalleryTab("presets");
+                    }}
+                    className={`px-3.5 py-1.5 text-xs font-mono font-bold uppercase border transition-all flex items-center gap-1.5 ${
+                      isExamplesOpen && galleryTab === "presets"
+                        ? "bg-[#c9a84c] text-black border-[#c9a84c]"
+                        : (theme === "dark-gold"
+                            ? "bg-black/60 text-neutral-300 border-white/10 hover:border-[#c9a84c] hover:text-[#c9a84c]"
+                            : "bg-white text-stone-700 border-stone-200 hover:border-[#c9a84c] hover:text-black")
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#c9a84c]" />
+                    <span>Explorer des chefs-d'œuvre exemples (15)</span>
+                    <span className="text-[10px]">{isExamplesOpen && galleryTab === "presets" ? "▲" : "▼"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExamplesOpen(!isExamplesOpen || galleryTab !== "custom");
+                      setGalleryTab("custom");
+                    }}
+                    className={`px-3.5 py-1.5 text-xs font-mono font-bold uppercase border transition-all flex items-center gap-1.5 ${
+                      isExamplesOpen && galleryTab === "custom"
+                        ? "bg-[#c9a84c] text-black border-[#c9a84c]"
+                        : (theme === "dark-gold"
+                            ? "bg-black/60 text-neutral-300 border-white/10 hover:border-[#c9a84c] hover:text-[#c9a84c]"
+                            : "bg-white text-stone-700 border-stone-200 hover:border-[#c9a84c] hover:text-black")
+                    }`}
+                  >
+                    <FolderPlus className="w-3.5 h-3.5 text-[#c9a84c]" />
+                    <span>Ma Galerie ({customArtworks.length}/50)</span>
+                    <span className="text-[10px]">{isExamplesOpen && galleryTab === "custom" ? "▲" : "▼"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className={`px-3.5 py-1.5 text-xs font-mono font-bold uppercase border transition-all flex items-center gap-1.5 ${
+                      theme === "dark-gold"
+                        ? "bg-black/60 text-neutral-400 border-white/10 hover:border-[#c9a84c] hover:text-white"
+                        : "bg-white text-stone-600 border-stone-200 hover:border-[#c9a84c] hover:text-black"
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5 text-[#c9a84c]" />
+                    <span>Profil Artiste {profile.name.trim() ? `(« ${profile.name} »)` : "(optionnel)"}</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Main Drag-and-Drop Area */}
-              <div>
-                <DropZone 
-                  onFileSelected={handleFileSelected} 
-                  onMultipleFilesSelected={handleMultipleFilesSelected} 
-                  theme={theme} 
-                />
-              </div>
+              {/* 2. ENSUITE DIRECTEMENT : SECTION EXPLICATION MASQUÉE AVEC « EXPLICATION » EN GROS ET FLÈCHE */}
+              <ExplanationSection
+                theme={theme}
+                onOpenArtworkTools={() => setIsArtworkToolsModalOpen(true)}
+                onOpenGalleryBridge={() => setIsGalleryBridgeOpen(true)}
+                onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
+                onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
+                onOpenPressSocial={() => setIsPressSocialOpen(true)}
+                onOpenProfileModal={() => setIsProfileModalOpen(true)}
+              />
 
               {/* Loader indicator for presets or batch imports */}
               {(isPresetLoading || batchLoadingStatus) && (
@@ -1509,25 +1318,33 @@ export default function App() {
                 </div>
               )}
 
-              {/* Decorative Divider */}
-              <div className="relative flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className={`w-full border-t transition-colors duration-300 ${
-                    theme === "dark-gold" ? "border-white/10" : "border-stone-200"
-                  }`} />
-                </div>
-                <div className={`relative px-6 py-1 font-serif italic text-sm transition-all duration-300 flex items-center gap-2 ${
-                  theme === "dark-gold" ? "bg-[#0A0A0A] text-[#c9a84c]" : "bg-[#FAF7F2] text-[#9c7d2b]"
-                }`}>
-                  <Layers className="w-4 h-4" />
-                  Sélectionner un chef-d'œuvre existant ou vos œuvres
-                </div>
-              </div>
+              {/* Galerie de Chefs-d'œuvre & Œuvres d'Atelier (Dépliée sur demande) */}
+              {isExamplesOpen && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b pb-2 border-[#c9a84c]/30">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-[#c9a84c] text-black font-mono font-bold text-[10px] sm:text-xs px-2 py-0.5 uppercase tracking-wider">
+                        GALERIE D'EXEMPLES
+                      </span>
+                      <span className={`text-xs sm:text-sm font-serif font-bold uppercase tracking-wider ${
+                        theme === "dark-gold" ? "text-white" : "text-stone-900"
+                      }`}>
+                        {galleryTab === "presets" ? "15 Chefs-d'œuvre pour Découvrir l'IA" : `Ma Galerie Virtuelle (${customArtworks.length}/50)`}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsExamplesOpen(false)}
+                      className="text-xs font-mono text-[#c9a84c] hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <span>✕ Masquer les exemples</span>
+                    </button>
+                  </div>
 
-              {/* Gallery section containing at least 15 artworks */}
-              <div className={`border p-6 sm:p-8 rounded-none transition-colors duration-300 ${
-                theme === "dark-gold" ? "bg-[#111111] border-white/10 shadow-2xl" : "bg-white border-[#e8dfd3] shadow-lg"
-              }`}>
+                  {/* Gallery section containing at least 15 artworks */}
+                  <div className={`border p-6 sm:p-8 rounded-none transition-colors duration-300 ${
+                    theme === "dark-gold" ? "bg-[#111111] border-white/10 shadow-2xl" : "bg-white border-[#e8dfd3] shadow-lg"
+                  }`}>
                 {/* Tabs Selector */}
                 <div className="flex border-b border-white/5 mb-6 justify-center sm:justify-start gap-4">
                   <button
@@ -1774,7 +1591,9 @@ export default function App() {
                     )}
                   </div>
                 )}
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* Active Dashboard */
@@ -2257,6 +2076,32 @@ export default function App() {
         isSubscribed={isSubscriptionActive}
         onRunAllAnalyses={handleRunAllAnalyses}
         onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+      />
+
+      {/* Artist Profile Modal */}
+      <ArtistProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        profile={profile}
+        setProfile={setProfile}
+        customApiKey={customApiKey}
+        setCustomApiKey={setCustomApiKey}
+        theme={theme}
+      />
+
+      {/* Hub Stratégique - 5 Pôles & 36 Outils */}
+      <HubStrategicModal
+        isOpen={isHubModalOpen}
+        onClose={() => setIsHubModalOpen(false)}
+        theme={theme}
+        onOpenArtworkTools={() => setIsArtworkToolsModalOpen(true)}
+        onOpenGalleryBridge={() => setIsGalleryBridgeOpen(true)}
+        onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
+        onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
+        onOpenPressSocial={() => setIsPressSocialOpen(true)}
+        onSelectTool={handleSelectToolFromTop}
+        activeToolId={activeToolId}
+        cache={cache}
       />
 
     </div>

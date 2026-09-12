@@ -137,7 +137,7 @@ export default function ToolsBar({
             <div className="flex items-center gap-2">
               <span className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 border ${
                 isSubscribed 
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" 
+                  ? "bg-[#c9a84c] text-black border-[#c9a84c] font-black" 
                   : "bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30"
               }`}>
                 {isSubscribed ? "PRO ACTIVÉ" : "OFFRE ABONNEMENT"}
