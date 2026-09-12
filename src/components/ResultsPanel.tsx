@@ -19,6 +19,7 @@ interface ResultsPanelProps {
   theme?: "dark-gold" | "light";
   previewUrl?: string | null;
   onRerunCurrentTool?: () => void;
+  onOpenGlobalReport?: () => void;
 }
 
 export default function ResultsPanel({ 
@@ -28,7 +29,8 @@ export default function ResultsPanel({
   artistName, 
   theme = "dark-gold",
   previewUrl,
-  onRerunCurrentTool
+  onRerunCurrentTool,
+  onOpenGlobalReport
 }: ResultsPanelProps) {
   const [copied, setCopied] = useState<string | null>(null);
   
@@ -118,7 +120,7 @@ export default function ResultsPanel({
 
       {/* Actions Header (Relancer & Copier) */}
       <div className={`flex flex-wrap items-center justify-between gap-2.5 mb-4 sm:mb-6 border-b pb-3 sm:pb-4 ${getBorderColor()}`}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {onRerunCurrentTool && (
             <button
               onClick={onRerunCurrentTool}
@@ -132,6 +134,18 @@ export default function ResultsPanel({
             >
               <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
               <span>Relancer cette recherche</span>
+            </button>
+          )}
+
+          {onOpenGlobalReport && (
+            <button
+              type="button"
+              onClick={onOpenGlobalReport}
+              className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black text-[10px] tracking-wider uppercase font-mono font-bold hover:brightness-110 shadow-sm cursor-pointer transition-all"
+              title="Exporter et télécharger le dossier des 16 recommandations en HTML autonome, format copier-coller ou partager"
+            >
+              <FileText className="w-3 h-3" />
+              <span>Dossier Global (.HTML / Copier / Partager)</span>
             </button>
           )}
         </div>

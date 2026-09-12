@@ -43,6 +43,7 @@ interface ToolsBarProps {
   onOpenVernissageModal?: () => void;
   onOpenCollectorSales?: () => void;
   onOpenPressSocial?: () => void;
+  onOpenGlobalReport?: () => void;
   batchProgress?: { current: number; total: number; currentToolName: string } | null;
   onRerunTool?: (id: string) => void;
 }
@@ -99,6 +100,7 @@ export default function ToolsBar({
   onOpenVernissageModal,
   onOpenCollectorSales,
   onOpenPressSocial,
+  onOpenGlobalReport,
   batchProgress,
   onRerunTool
 }: ToolsBarProps) {
@@ -220,6 +222,31 @@ export default function ToolsBar({
                 style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
               />
             </div>
+          </div>
+        )}
+
+        {/* Global Report Available Bar */}
+        {completedCount > 0 && onOpenGlobalReport && !batchProgress && (
+          <div className="mt-3 pt-3 border-t border-[#c9a84c]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="text-base">📜</span>
+              <div>
+                <span className="text-xs text-[#c9a84c] font-mono font-bold uppercase tracking-wider block">
+                  Dossier Global Disponible ({completedCount}/16)
+                </span>
+                <span className={`text-[10px] ${isDark ? "text-neutral-400" : "text-stone-600"}`}>
+                  Téléchargez en HTML autonome, copiez ou partagez toutes les recommandations.
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenGlobalReport}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black font-mono font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-md cursor-pointer transition-all whitespace-nowrap self-start sm:self-auto"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Dossier Global (.HTML / Copier / Partager)</span>
+            </button>
           </div>
         )}
       </div>

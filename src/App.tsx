@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Sparkles, BookOpen, Trash2, ArrowLeft, Paintbrush, HelpCircle, 
   AlertTriangle, Plus, FolderPlus, Heart, Check, X, Calendar, Eye, 
-  Layers, FileText, RefreshCw, Loader2, Crown, Lock, User
+  Layers, FileText, RefreshCw, Loader2, Crown, Lock, User, Images
 } from "lucide-react";
 import { ArtistProfile, HistoryItem, CustomArtwork } from "./types.js";
 import { TOOLS } from "./data.js";
@@ -27,6 +27,8 @@ import VernissageEventModal from "./components/VernissageEventModal.js";
 import CollectorSalesModal from "./components/CollectorSalesModal.js";
 import PressSocialBridgeModal from "./components/PressSocialBridgeModal.js";
 import ArtworkToolsModal from "./components/ArtworkToolsModal.js";
+import AddFromGalleryModal from "./components/AddFromGalleryModal.js";
+import GlobalReportExportModal from "./components/GlobalReportExportModal.js";
 
 const DEFAULT_PROFILE: ArtistProfile = {
   name: "",
@@ -151,6 +153,8 @@ export default function App() {
   const [isVernissageModalOpen, setIsVernissageModalOpen] = useState<boolean>(false);
   const [isCollectorSalesOpen, setIsCollectorSalesOpen] = useState<boolean>(false);
   const [isPressSocialOpen, setIsPressSocialOpen] = useState<boolean>(false);
+  const [isAddFromGalleryOpen, setIsAddFromGalleryOpen] = useState<boolean>(false);
+  const [isGlobalReportModalOpen, setIsGlobalReportModalOpen] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; currentToolName: string } | null>(null);
 
   // Gallery States
@@ -546,14 +550,51 @@ export default function App() {
     setActiveSeries(updatedSeries);
     
     if (updatedSeries.length > 0) {
-      // Focus on the newly interacted item or first item
-      const focusItem = isInSeries ? updatedSeries[0] : { ...item, imageSrc: finalImageSrc };
-      setImageBase64(focusItem.imageSrc);
-      setPreviewUrl(focusItem.imageSrc);
-      setFile(null);
-      setActiveToolId("style");
+      // If we don't have a preview yet, or if current previewed item was removed, focus on the first item
+      if (!previewUrl || !updatedSeries.some(s => s.imageSrc === imageBase64)) {
+        const focusItem = updatedSeries[0];
+        setImageBase64(focusItem.imageSrc);
+        setPreviewUrl(focusItem.imageSrc);
+        setFile(null);
+        setActiveToolId("style");
+      }
     } else {
       // If the series became empty, clean up the workbench
+      handleReset();
+    }
+  };
+
+  // Handler: Batch add multiple artworks to series
+  const handleAddMultipleToSeries = (items: Array<{ id: string; title: string; imageSrc: string; artist?: string; medium?: string; year?: string }>) => {
+    setError(null);
+    setCache({});
+    const existingIds = new Set(activeSeries.map(s => s.id));
+    const toAdd = items.filter(item => !existingIds.has(item.id));
+    if (toAdd.length > 0) {
+      const newSeries = [...activeSeries, ...toAdd];
+      setActiveSeries(newSeries);
+      if (!previewUrl && newSeries.length > 0) {
+        setImageBase64(newSeries[0].imageSrc);
+        setPreviewUrl(newSeries[0].imageSrc);
+        setFile(null);
+        setActiveToolId("style");
+      }
+    }
+  };
+
+  // Handler: Batch remove multiple artworks from series
+  const handleRemoveMultipleFromSeries = (ids: string[]) => {
+    setError(null);
+    setCache({});
+    const idsToRemove = new Set(ids);
+    const updated = activeSeries.filter(s => !idsToRemove.has(s.id));
+    setActiveSeries(updated);
+    if (updated.length > 0) {
+      if (!updated.some(item => item.imageSrc === imageBase64)) {
+        setImageBase64(updated[0].imageSrc);
+        setPreviewUrl(updated[0].imageSrc);
+      }
+    } else {
       handleReset();
     }
   };
@@ -832,6 +873,8 @@ export default function App() {
     } finally {
       setBatchProgress(null);
       setIsLoading(false);
+      // Automatically open the Global Report Modal with all 16 recommendations
+      setIsGlobalReportModalOpen(true);
     }
   };
 
@@ -1156,33 +1199,43 @@ export default function App() {
               <span>36 Outils IA</span>
             </button>
 
-            {/* Subscription Pro Trigger Button (3 € / mois ou 20 € / an) */}
+            {/* Atelier Pro - Bouton Doré Royal Prestigieux */}
             <button
+              id="atelier-pro-top-btn"
               onClick={() => setIsSubscriptionModalOpen(true)}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
-                isSubscriptionActive
-                  ? "bg-[#c9a84c] text-black border-[#c9a84c] hover:bg-[#dfbd5e] shadow-[0_0_12px_rgba(201,168,76,0.35)]"
-                  : (theme === "dark-gold"
-                      ? "bg-[#14120a] text-[#c9a84c] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black shadow-sm"
-                      : "bg-amber-50 text-[#9c7d2b] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black shadow-sm")
-              }`}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black border-[#c9a84c] hover:brightness-110 hover:shadow-[0_0_15px_rgba(201,168,76,0.45)] cursor-pointer"
               title="Abonnement Atelier Pro : 3 € / mois ou 20 € / an (1ère année)"
             >
-              <Crown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isSubscriptionActive ? "text-black" : "text-[#c9a84c]"}`} />
+              <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black fill-black/20" />
               <span>{isSubscriptionActive ? "Atelier Pro (Actif)" : "Atelier Pro"}</span>
             </button>
 
+            {/* Dossier Global (16 Outils) Export Button - Visible when analyses exist */}
+            {Object.keys(cache).length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsGlobalReportModalOpen(true)}
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black border-[#c9a84c] hover:brightness-110 cursor-pointer animate-fadeIn"
+                title="Télécharger le dossier complet en HTML autonome, copier-coller ou partager"
+              >
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
+                <span>Dossier Global ({Object.keys(cache).length}/16)</span>
+              </button>
+            )}
+
             {/* Donation System Trigger */}
             <button
+              id="support-donation-btn"
               onClick={() => setIsDonationOpen(true)}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border ${
+              className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-2 text-xs tracking-wider uppercase font-sans font-bold transition-all duration-300 rounded-none shadow-md border cursor-pointer ${
                 theme === "dark-gold"
                   ? "bg-rose-950/20 text-rose-300 border-rose-900/40 hover:bg-rose-900 hover:text-white"
                   : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:text-rose-800"
               }`}
+              title="Soutenir l'Atelier"
             >
-              <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 fill-rose-500/20" />
-              <span className="hidden xs:inline">Soutenir</span>
+              <span>Soutenir</span>
+              <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />
             </button>
 
             {/* Carnet de Bord */}
@@ -1345,30 +1398,62 @@ export default function App() {
                   <div className={`border p-6 sm:p-8 rounded-none transition-colors duration-300 ${
                     theme === "dark-gold" ? "bg-[#111111] border-white/10 shadow-2xl" : "bg-white border-[#e8dfd3] shadow-lg"
                   }`}>
-                {/* Tabs Selector */}
-                <div className="flex border-b border-white/5 mb-6 justify-center sm:justify-start gap-4">
-                  <button
-                    onClick={() => setGalleryTab("presets")}
-                    className={`pb-3 text-xs tracking-widest uppercase font-sans font-bold border-b-2 transition-all duration-300 flex items-center gap-2 ${
-                      galleryTab === "presets"
-                        ? "border-[#c9a84c] text-[#c9a84c]"
-                        : "border-transparent text-neutral-500 hover:text-neutral-300"
-                    }`}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    Chefs-d'œuvre (15)
-                  </button>
-                  <button
-                    onClick={() => setGalleryTab("custom")}
-                    className={`pb-3 text-xs tracking-widest uppercase font-sans font-bold border-b-2 transition-all duration-300 flex items-center gap-2 ${
-                      galleryTab === "custom"
-                        ? "border-[#c9a84c] text-[#c9a84c]"
-                        : "border-transparent text-neutral-500 hover:text-neutral-300"
-                    }`}
-                  >
-                    <FolderPlus className="w-4 h-4" />
-                    Ma Galerie Virtuelle ({customArtworks.length}/50)
-                  </button>
+                {/* Tabs Selector & Active Series Quick Launch Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 mb-6 gap-3 pb-2">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setGalleryTab("presets")}
+                      className={`pb-3 text-xs tracking-widest uppercase font-sans font-bold border-b-2 transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                        galleryTab === "presets"
+                          ? "border-[#c9a84c] text-[#c9a84c]"
+                          : "border-transparent text-neutral-500 hover:text-neutral-300"
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Chefs-d'œuvre (15)
+                    </button>
+                    <button
+                      onClick={() => setGalleryTab("custom")}
+                      className={`pb-3 text-xs tracking-widest uppercase font-sans font-bold border-b-2 transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                        galleryTab === "custom"
+                          ? "border-[#c9a84c] text-[#c9a84c]"
+                          : "border-transparent text-neutral-500 hover:text-neutral-300"
+                      }`}
+                    >
+                      <FolderPlus className="w-4 h-4" />
+                      Ma Galerie Virtuelle ({customArtworks.length}/50)
+                    </button>
+                  </div>
+
+                  {activeSeries.length > 0 && (
+                    <div className="flex items-center gap-2 animate-fadeIn">
+                      <span className="text-[10px] font-mono text-[#c9a84c] font-bold">
+                        {activeSeries.length} sélectionnée(s)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const first = activeSeries[0];
+                          setImageBase64(first.imageSrc);
+                          setPreviewUrl(first.imageSrc);
+                          setFile(null);
+                          setActiveToolId("style");
+                        }}
+                        className="px-3 py-1.5 bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black text-[10px] font-mono font-bold uppercase tracking-wider hover:brightness-110 shadow-md cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Lancer la Série ({activeSeries.length}) →</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMultipleFromSeries(activeSeries.map(s => s.id))}
+                        className="px-2 py-1.5 text-[9px] font-mono text-neutral-400 hover:text-rose-400 border border-white/10 cursor-pointer"
+                        title="Vider la sélection"
+                      >
+                        Vider
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Presets Gallery Grid */}
@@ -1639,24 +1724,47 @@ export default function App() {
                   <div className={`border p-4 rounded-none transition-colors duration-300 animate-fadeIn ${
                     theme === "dark-gold" ? "bg-[#111111] border-white/10" : "bg-white border-[#e8dfd3]"
                   }`}>
-                    <div className="flex items-center justify-between mb-3 border-b border-[#c9a84c]/20 pb-2">
+                    <div className="flex items-center justify-between mb-3 border-b border-[#c9a84c]/20 pb-2 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <Layers className="w-4 h-4 text-[#c9a84c]" />
                         <h4 className="text-xs font-sans font-bold tracking-widest uppercase text-neutral-300">
                           Série de Vernissage en cours
                         </h4>
                       </div>
-                      <span className="text-[10px] font-mono bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 font-bold">
-                        {activeSeries.length} ŒUVRE{activeSeries.length > 1 ? 'S' : ''}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsAddFromGalleryOpen(true)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-bold uppercase bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black hover:brightness-110 transition-all shadow-sm cursor-pointer"
+                          title="Ajouter d'autres œuvres déjà enregistrées dans votre galerie"
+                        >
+                          <Images className="w-3.5 h-3.5" />
+                          <span>+ Photos déjà importées ({customArtworks.length})</span>
+                        </button>
+                        <span className="text-[10px] font-mono bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 font-bold">
+                          {activeSeries.length} ŒUVRE{activeSeries.length > 1 ? 'S' : ''}
+                        </span>
+                      </div>
                     </div>
 
-                    <p className="text-[10px] text-neutral-400 italic mb-4 leading-relaxed">
-                      {activeSeries.length > 1 
-                        ? "Analyse globale activée. L'IA étudie les connexions esthétiques, thématiques et la continuité de la série." 
-                        : "Ajoutez d'autres œuvres depuis la galerie ci-dessous pour activer l'analyse globale de la série."
-                      }
-                    </p>
+                    {activeSeries.length === 1 ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-[#c9a84c]/10 border border-[#c9a84c]/30 p-2.5 mb-3">
+                        <p className="text-[11px] text-[#c9a84c] font-sans">
+                          💡 <strong>Une seule œuvre sélectionnée :</strong> Vous pouvez facilement rajouter d'autres toiles déjà importées pour activer la comparaison et l'analyse globale de série.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddFromGalleryOpen(true)}
+                          className="px-2.5 py-1 bg-[#c9a84c] text-black font-mono font-bold text-[10px] uppercase hover:bg-white transition-colors whitespace-nowrap self-start sm:self-auto cursor-pointer"
+                        >
+                          Choisir parmi mes {customArtworks.length} œuvres →
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-neutral-400 italic mb-3 leading-relaxed">
+                        Analyse globale activée sur {activeSeries.length} œuvres. L'IA étudie les connexions esthétiques, la palette chromatique commune et la cohérence scénographique.
+                      </p>
+                    )}
 
                     {/* Horizontal list of thumbnails */}
                     <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
@@ -1671,9 +1779,10 @@ export default function App() {
                             }}
                             className={`relative flex-shrink-0 w-16 h-16 border cursor-pointer group transition-all duration-300 ${
                               isFocused 
-                                ? "border-[#c9a84c] scale-105" 
+                                ? "border-[#c9a84c] scale-105 shadow-md shadow-[#c9a84c]/20" 
                                 : "border-neutral-800 hover:border-neutral-500"
                             }`}
+                            title={`Focus sur : ${item.title}`}
                           >
                             <img 
                               src={item.imageSrc} 
@@ -1702,14 +1811,30 @@ export default function App() {
                         );
                       })}
                       
+                      {/* Quick Button: Add from already imported artworks */}
+                      <button
+                        type="button"
+                        onClick={() => setIsAddFromGalleryOpen(true)}
+                        className={`w-16 h-16 flex-shrink-0 border flex flex-col items-center justify-center cursor-pointer transition-all ${
+                          theme === "dark-gold" 
+                            ? "bg-[#c9a84c]/15 border-[#c9a84c]/70 text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black" 
+                            : "bg-amber-50 border-[#c9a84c] text-[#9c7d2b] hover:bg-[#c9a84c] hover:text-black"
+                        }`}
+                        title="Ajouter d'autres œuvres déjà importées"
+                      >
+                        <Images className="w-5 h-5" />
+                        <span className="text-[8px] uppercase tracking-widest mt-1 font-bold">Galerie</span>
+                      </button>
+
                       {/* Upload more directly into series */}
                       <label className={`w-16 h-16 flex-shrink-0 border border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
                         theme === "dark-gold" 
                           ? "border-neutral-800 hover:border-[#c9a84c]/30 text-neutral-500 hover:text-[#c9a84c]" 
                           : "border-stone-300 hover:border-[#c9a84c]/30 text-stone-400 hover:text-stone-700"
-                      }`}>
+                      }`}
+                      title="Importer un nouveau fichier depuis votre ordinateur">
                         <Plus className="w-5 h-5" />
-                        <span className="text-[8px] uppercase tracking-widest mt-1">Ajouter</span>
+                        <span className="text-[8px] uppercase tracking-widest mt-1">Fichier</span>
                         <input 
                           type="file" 
                           accept="image/*" 
@@ -1940,6 +2065,7 @@ export default function App() {
                     onOpenPressSocial={() => setIsPressSocialOpen(true)}
                     batchProgress={batchProgress}
                     onRerunTool={handleRerunTool}
+                    onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
                   />
                 </div>
 
@@ -1973,6 +2099,7 @@ export default function App() {
                   theme={theme}
                   previewUrl={previewUrl}
                   onRerunCurrentTool={handleRerun}
+                  onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
                 />
               </div>
 
@@ -2076,6 +2203,7 @@ export default function App() {
         isSubscribed={isSubscriptionActive}
         onRunAllAnalyses={handleRunAllAnalyses}
         onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+        onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
       />
 
       {/* Artist Profile Modal */}
@@ -2102,6 +2230,43 @@ export default function App() {
         onSelectTool={handleSelectToolFromTop}
         activeToolId={activeToolId}
         cache={cache}
+      />
+
+      {/* Modal pour ajouter facilement des photos déjà importées à la série */}
+      <AddFromGalleryModal
+        isOpen={isAddFromGalleryOpen}
+        onClose={() => setIsAddFromGalleryOpen(false)}
+        customArtworks={customArtworks}
+        activeSeries={activeSeries}
+        onToggleItem={handleToggleInSeries}
+        onAddMultiple={handleAddMultipleToSeries}
+        onRemoveMultiple={handleRemoveMultipleFromSeries}
+        onUploadNewFiles={handleMultipleFilesSelected}
+        theme={theme}
+      />
+
+      {/* Modal Dossier Global d'Expertise (Téléchargement HTML, Copier-Coller & Partage) */}
+      <GlobalReportExportModal
+        isOpen={isGlobalReportModalOpen}
+        onClose={() => setIsGlobalReportModalOpen(false)}
+        cache={cache}
+        artistProfile={{
+          name: profile.name,
+          style: profile.style,
+          bio: profile.bio,
+          location: profile.desc,
+          website: profile.web
+        }}
+        artwork={{
+          title: selectedArtwork?.title || saveTitle || (activeSeries.length > 0 ? activeSeries[0].title : "Œuvre d'Atelier"),
+          artist: profile.name || selectedArtwork?.artist || saveArtist || "Artiste",
+          medium: selectedArtwork?.medium || saveMedium || profile.style || "Technique Mixte",
+          year: selectedArtwork?.year || saveYear || new Date().getFullYear().toString(),
+          dimensions: (selectedArtwork && 'dimensions' in selectedArtwork) ? selectedArtwork.dimensions : undefined,
+          imageSrc: imageBase64 || previewUrl || undefined
+        }}
+        activeSeries={activeSeries}
+        theme={theme}
       />
 
     </div>

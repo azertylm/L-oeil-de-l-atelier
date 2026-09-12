@@ -21,6 +21,7 @@ interface ArtworkToolsModalProps {
   cache: Record<string, any>;
   theme: "dark-gold" | "light";
   onRunAllAnalyses?: () => void;
+  onOpenGlobalReport?: () => void;
   isSubscribed?: boolean;
   hasArtwork?: boolean;
   onOpenSubscriptionModal?: () => void;
@@ -55,7 +56,8 @@ export default function ArtworkToolsModal({
   onRunAllAnalyses,
   isSubscribed,
   hasArtwork,
-  onOpenSubscriptionModal
+  onOpenSubscriptionModal,
+  onOpenGlobalReport
 }: ArtworkToolsModalProps) {
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -102,7 +104,22 @@ export default function ArtworkToolsModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {onOpenGlobalReport && completedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenGlobalReport();
+                  onClose();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black font-mono font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-md cursor-pointer transition-all"
+                title="Télécharger le dossier complet en HTML ou format copier-coller"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Dossier Global ({completedCount}/16)</span>
+              </button>
+            )}
+
             {onRunAllAnalyses && (
               <button
                 type="button"
@@ -181,6 +198,34 @@ export default function ArtworkToolsModal({
 
         {/* Tools Grid */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 scrollbar-thin">
+          {completedCount > 0 && onOpenGlobalReport && (
+            <div className={`p-3.5 mb-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              isDark ? "bg-[#18150d] border-[#c9a84c]/60 text-white" : "bg-amber-50 border-[#c9a84c] text-stone-900"
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📜</span>
+                <div>
+                  <div className="text-xs font-bold text-[#c9a84c] uppercase tracking-wide">
+                    Dossier Global des Recommandations Prêt ({completedCount}/16)
+                  </div>
+                  <div className={`text-[11px] font-sans ${isDark ? "text-neutral-300" : "text-stone-600"}`}>
+                    Téléchargez l'intégralité du diagnostic en fichier HTML autonome, copiez-collez le texte brut ou partagez-le en 1 clic.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenGlobalReport();
+                  onClose();
+                }}
+                className="px-3.5 py-1.5 bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black font-mono font-bold text-xs uppercase tracking-wider hover:brightness-110 transition-all whitespace-nowrap self-start sm:self-auto cursor-pointer shadow-sm"
+              >
+                Ouvrir le Dossier Global →
+              </button>
+            </div>
+          )}
+
           {!hasArtwork && (
             <div className={`p-3 mb-4 border text-xs flex items-center justify-between gap-3 ${
               isDark ? "bg-amber-950/20 border-[#c9a84c]/30 text-amber-200" : "bg-amber-50 border-amber-200 text-amber-900"

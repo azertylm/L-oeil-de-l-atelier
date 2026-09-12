@@ -245,8 +245,8 @@ export default function SubscriptionModal({
             )}
 
             {promoSuccess && (
-              <div className="flex items-center gap-1.5 text-emerald-400 text-xs mt-2 animate-fadeIn font-mono">
-                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+              <div className="flex items-center gap-1.5 text-[#c9a84c] text-xs mt-2 animate-fadeIn font-mono">
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 text-[#c9a84c]" />
                 <span>{promoSuccess}</span>
               </div>
             )}
@@ -431,7 +431,7 @@ export default function SubscriptionModal({
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-3xl font-serif font-bold text-[#c9a84c]">20 €</span>
                         <span className="text-xs text-neutral-400 font-sans">/ an</span>
-                        <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 font-bold">
+                        <span className="text-[10px] font-mono bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/40 px-1.5 py-0.5 font-bold">
                           -44% d'économie
                         </span>
                       </div>
@@ -489,8 +489,8 @@ export default function SubscriptionModal({
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between text-xs text-neutral-400">
                   <span className="font-mono uppercase tracking-wider text-[10px]">Moyen de paiement sécurisé</span>
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-                    <ShieldCheck className="w-3.5 h-3.5" /> SSL 256-bit
+                  <span className="flex items-center gap-1 text-[10px] text-[#c9a84c]">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#c9a84c]" /> SSL 256-bit
                   </span>
                 </div>
 
