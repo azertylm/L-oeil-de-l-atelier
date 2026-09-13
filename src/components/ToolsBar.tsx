@@ -30,6 +30,7 @@ import {
   CheckCircle2,
   Loader2
 } from "lucide-react";
+import { useLanguage } from "../i18n/LanguageContext.js";
 
 interface ToolsBarProps {
   activeToolId: string;
@@ -108,6 +109,7 @@ export default function ToolsBar({
 }: ToolsBarProps) {
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
   const isDark = theme === "dark-gold";
+  const { t } = useLanguage();
 
   // Completed count
   const completedCount = TOOLS.filter(t => !!cache[t.id]).length;
@@ -509,7 +511,7 @@ export default function ToolsBar({
                   {pIdx + 1}
                 </span>
                 <h4 className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#c9a84c]">
-                  {phase.category}
+                  {t(`phase_${pIdx + 1}`, phase.category)}
                 </h4>
               </div>
 
@@ -518,7 +520,7 @@ export default function ToolsBar({
                   const isActive = activeToolId === tool.id;
                   const isCached = !!cache[tool.id];
                   const IconComponent = iconMap[tool.id] || Search;
-                  const displayLabel = labelMap[tool.id] || tool.label.toUpperCase();
+                  const displayLabel = t(`tool_${tool.id}`, labelMap[tool.id] || tool.label.toUpperCase());
 
                   return (
                     <div
@@ -595,7 +597,7 @@ export default function ToolsBar({
             const isActive = activeToolId === tool.id;
             const isCached = !!cache[tool.id];
             const IconComponent = iconMap[tool.id] || Search;
-            const displayLabel = labelMap[tool.id] || tool.label.toUpperCase();
+            const displayLabel = t(`tool_${tool.id}`, labelMap[tool.id] || tool.label.toUpperCase());
 
             return (
               <div

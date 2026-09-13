@@ -8,14 +8,15 @@ import {
   Sparkles, BookOpen, Trash2, ArrowLeft, Paintbrush, HelpCircle, 
   AlertTriangle, Plus, FolderPlus, Heart, Check, X, Calendar, Eye, 
   Layers, FileText, RefreshCw, Loader2, Crown, Lock, User, Images,
-  QrCode, Tag
+  QrCode, Tag, Globe, Share2
 } from "lucide-react";
 import { ArtistProfile, HistoryItem, CustomArtwork } from "./types.js";
 import { TOOLS } from "./data.js";
 import { PRESET_ARTWORKS, getArtworkBase64, PresetArtwork } from "./presets.js";
+import { useLanguage } from "./i18n/LanguageContext.js";
+import { LanguageSelectorModal } from "./components/LanguageSelectorModal.js";
 import ArtistProfileForm from "./components/ArtistProfileForm.js";
 import ArtistProfileModal from "./components/ArtistProfileModal.js";
-import ExplanationSection from "./components/ExplanationSection.js";
 import HubStrategicModal from "./components/HubStrategicModal.js";
 import DropZone from "./components/DropZone.js";
 import HistoryModal from "./components/HistoryModal.js";
@@ -31,6 +32,9 @@ import ArtworkToolsModal from "./components/ArtworkToolsModal.js";
 import AddFromGalleryModal from "./components/AddFromGalleryModal.js";
 import GlobalReportExportModal from "./components/GlobalReportExportModal.js";
 import QrSalesCartelModal from "./components/QrSalesCartelModal.js";
+import ShareModal, { ShareRole } from "./components/ShareModal.js";
+import TopExplanationTab from "./components/TopExplanationTab.js";
+import ExplanationSection from "./components/ExplanationSection.js";
 
 const DEFAULT_PROFILE: ArtistProfile = {
   name: "",
@@ -136,6 +140,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark-gold" | "light">("dark-gold");
+  const { language, setLanguage, t, langMeta, isRTL } = useLanguage();
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState<boolean>(false);
 
   // Persistence States
   const [profile, setProfile] = useState<ArtistProfile>(DEFAULT_PROFILE);
@@ -158,7 +164,10 @@ export default function App() {
   const [isAddFromGalleryOpen, setIsAddFromGalleryOpen] = useState<boolean>(false);
   const [isGlobalReportModalOpen, setIsGlobalReportModalOpen] = useState<boolean>(false);
   const [isQrSalesModalOpen, setIsQrSalesModalOpen] = useState<boolean>(false);
-  const [qrSalesInitialTab, setQrSalesInitialTab] = useState<"generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels">("generator");
+  const [qrSalesInitialTab, setQrSalesInitialTab] = useState<"generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels" | "contract_coa">("generator");
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [shareRole, setShareRole] = useState<ShareRole>("all");
+  const [isTopExplanationOpen, setIsTopExplanationOpen] = useState<boolean>(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; currentToolName: string } | null>(null);
 
   // Gallery States
@@ -173,7 +182,7 @@ export default function App() {
   const [saveMedium, setSaveMedium] = useState<string>("");
   const [saveYear, setSaveYear] = useState<string>("");
 
-  // Load Persisted Data on Mount
+  // Load Persisted Data & Deep Links on Mount
   useEffect(() => {
     const savedProfile = localStorage.getItem("oeilAtelier_profile");
     if (savedProfile) {
@@ -215,6 +224,31 @@ export default function App() {
     const savedSubscription = localStorage.getItem("oeilAtelier_subscriptionActive");
     if (savedSubscription === "true") {
       setIsSubscriptionActive(true);
+    }
+
+    // Interception des Deep Links de Partage (?view=...&role=...&mode=...&verify=...)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get("view");
+      const roleParam = params.get("role");
+      const mode = params.get("mode");
+      const verify = params.get("verify");
+
+      if (view === "bridge" || roleParam === "galeriste") {
+        setIsGalleryBridgeOpen(true);
+      } else if (view === "cartels" || mode === "visitor") {
+        if (mode === "visitor") setQrSalesInitialTab("visitor_preview");
+        setIsQrSalesModalOpen(true);
+      } else if (view === "contract" || verify) {
+        setQrSalesInitialTab("contract_coa");
+        setIsQrSalesModalOpen(true);
+      } else if (view === "sales" || roleParam === "collectionneur") {
+        setIsCollectorSalesOpen(true);
+      } else if (roleParam) {
+        setShareRole(roleParam as ShareRole);
+      }
+    } catch (e) {
+      console.error("Error reading URL parameters:", e);
     }
   }, []);
 
@@ -681,7 +715,8 @@ export default function App() {
           images: activeSeries.length > 1 ? activeSeries.map(item => item.imageSrc) : undefined,
           mimeType: file ? file.type : "image/jpeg",
           toolId: toolIdToRun,
-          artistProfile: profile
+          artistProfile: profile,
+          language: language
         })
       });
 
@@ -856,7 +891,8 @@ export default function App() {
               images: activeSeries.length > 1 ? activeSeries.map(item => item.imageSrc) : undefined,
               mimeType: file ? file.type : "image/jpeg",
               toolId: currentTool.id,
-              artistProfile: profile
+              artistProfile: profile,
+              language: language
             })
           });
 
@@ -953,6 +989,7 @@ export default function App() {
           image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
           toolId: toolId,
           artistProfile: profile,
+          language: language,
           seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
             title: a.title,
             artist: a.artist,
@@ -996,6 +1033,7 @@ export default function App() {
           image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
           toolId: toolId,
           artistProfile: profile,
+          language: language,
           seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
             title: a.title,
             artist: a.artist,
@@ -1039,6 +1077,7 @@ export default function App() {
           image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
           toolId: toolId,
           artistProfile: profile,
+          language: language,
           seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
             title: a.title,
             artist: a.artist,
@@ -1082,6 +1121,7 @@ export default function App() {
           image: imgToSend || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
           toolId: toolId,
           artistProfile: profile,
+          language: language,
           seriesArtworks: activeSeries.length > 0 ? activeSeries.map(a => ({
             title: a.title,
             artist: a.artist,
@@ -1145,21 +1185,37 @@ export default function App() {
             <span className={`text-[10px] sm:text-[11px] font-sans font-bold tracking-[0.3em] uppercase mb-1 transition-colors duration-300 ${
               theme === "dark-gold" ? "text-neutral-500" : "text-stone-500"
             }`}>
-              LE PONT INTELLIGENT ENTRE ARTISTES, GALERIES & ACHETEURS
+              {t("bridge_tagline", "LE PONT INTELLIGENT ENTRE ARTISTES, GALERIES & ACHETEURS")}
             </span>
             <h1 className={`font-serif font-light text-3xl sm:text-5xl md:text-6xl tracking-tight leading-none transition-colors duration-300 ${
               theme === "dark-gold" ? "text-white" : "text-stone-950"
             }`}>
-              L'Œil de <span className="italic text-[#c9a84c] font-light font-serif">l'Atelier</span>
+              L'Œil de <span className="italic text-[#c9a84c] font-light font-serif">{t("app_title_suffix", "l'Atelier")}</span>
             </h1>
             <p className={`text-[9px] sm:text-[10px] tracking-[0.15em] uppercase font-sans mt-2 sm:mt-3.5 transition-colors duration-300 font-bold ${
               theme === "dark-gold" ? "text-[#c9a84c]" : "text-[#9c7d2b]"
             }`}>
-              36 OUTILS IA POUR CRÉER, VALORISER, EXPOSER & VENDRE VOTRE ART
+              {t("app_subtitle", "36 OUTILS IA POUR CRÉER, VALORISER, EXPOSER & VENDRE VOTRE ART")}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3">
+            {/* Language Selector Trigger */}
+            <button
+              id="language-selector-btn"
+              onClick={() => setIsLanguageModalOpen(true)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border cursor-pointer ${
+                theme === "dark-gold"
+                  ? "bg-black text-[#c9a84c] border-[#c9a84c] hover:bg-[#c9a84c] hover:text-black"
+                  : "bg-white text-stone-900 border-stone-300 hover:bg-stone-50"
+              }`}
+              title="Changer la langue officielle / Change language (14 langues traduites)"
+            >
+              <span className="text-base leading-none">{langMeta.flag}</span>
+              <span className="font-bold">{langMeta.code.toUpperCase()}</span>
+              <Globe className="w-3.5 h-3.5 text-[#c9a84c]" />
+            </button>
+
             {/* Theme Selector Toggle */}
             <button
               onClick={handleToggleTheme}
@@ -1170,7 +1226,7 @@ export default function App() {
               }`}
             >
               <Paintbrush className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              {theme === "dark-gold" ? "Mode Clair" : "Noir & Or"}
+              {theme === "dark-gold" ? t("theme_light", "Mode Clair") : t("theme_dark", "Noir & Or")}
             </button>
 
             {/* Profil Artiste Trigger Button */}
@@ -1186,7 +1242,25 @@ export default function App() {
               title="Renseigner ou modifier votre profil d'artiste"
             >
               <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>{profile.name.trim() ? profile.name : "Profil Artiste"}</span>
+              <span>{profile.name.trim() ? profile.name : t("artist_profile", "Profil Artiste")}</span>
+            </button>
+
+            {/* Guide & Explications (Tout ce qu'il est possible de faire) */}
+            <button
+              id="top-guide-toggle-btn"
+              onClick={() => setIsTopExplanationOpen((prev) => !prev)}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border cursor-pointer ${
+                isTopExplanationOpen
+                  ? "bg-[#c9a84c] text-black border-[#c9a84c] hover:bg-white"
+                  : (theme === "dark-gold"
+                      ? "bg-[#14120a] text-[#c9a84c] border-[#c9a84c]/60 hover:bg-[#c9a84c] hover:text-black"
+                      : "bg-amber-50 text-stone-900 border-amber-300 hover:border-[#c9a84c] hover:bg-amber-100")
+              }`}
+              title={isTopExplanationOpen ? "Masquer le guide d'explications" : "Afficher le guide d'explications de toute l'application"}
+            >
+              <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>{t("guide_btn", "Guide")}</span>
+              <span className="text-[10px]">{isTopExplanationOpen ? "▲" : "▼"}</span>
             </button>
 
             {/* Hub Stratégique - 5 Pôles & 36 Outils IA */}
@@ -1200,7 +1274,7 @@ export default function App() {
               title="Ouvrir le Hub Stratégique des 5 Pôles et 36 Outils d'Art"
             >
               <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a84c]" />
-              <span>36 Outils IA</span>
+              <span>{t("hub_btn", "36 Outils IA")}</span>
             </button>
 
             {/* Atelier Pro - Bouton Doré Royal Prestigieux */}
@@ -1211,7 +1285,7 @@ export default function App() {
               title="Abonnement Atelier Pro : 3 € / mois ou 20 € / an (1ère année)"
             >
               <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black fill-black/20" />
-              <span>{isSubscriptionActive ? "Atelier Pro (Actif)" : "Atelier Pro"}</span>
+              <span>{isSubscriptionActive ? t("pro_active", "Atelier Pro (Actif)") : t("pro_btn", "Atelier Pro")}</span>
             </button>
 
             {/* Cartels Muraux & QR Codes de Vente Directe */}
@@ -1222,7 +1296,21 @@ export default function App() {
               title="Générateur de cartels muraux prêts à imprimer avec QR codes de vente et 50 innovations marché"
             >
               <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
-              <span className="hidden xs:inline">Cartels & QR Vente</span>
+              <span className="hidden xs:inline">{t("cartels_btn", "Cartels & QR Vente")}</span>
+            </button>
+
+            {/* Partage Universel (Artistes • Galeristes • Visiteurs • Collectionneurs) */}
+            <button
+              id="share-app-btn"
+              onClick={() => {
+                setShareRole("all");
+                setIsShareModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black cursor-pointer"
+              title="Partager des liens directs vers l'application (Galeristes, Artistes, Visiteurs, Acheteurs)"
+            >
+              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{t("share_btn", "Partager")}</span>
             </button>
 
             {/* Dossier Global (16 Outils) Export Button - Visible when analyses exist */}
@@ -1234,7 +1322,7 @@ export default function App() {
                 title="Télécharger le dossier complet en HTML autonome, copier-coller ou partager"
               >
                 <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
-                <span>Dossier Global ({Object.keys(cache).length}/16)</span>
+                <span>{t("global_report", "Dossier Global")} ({Object.keys(cache).length}/16)</span>
               </button>
             )}
 
@@ -1249,7 +1337,7 @@ export default function App() {
               }`}
               title="Soutenir l'Atelier"
             >
-              <span>Soutenir</span>
+              <span>{t("support_btn", "Soutenir")}</span>
               <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />
             </button>
 
@@ -1263,10 +1351,36 @@ export default function App() {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Carnet de Bord
+              {t("logbook_btn", "Carnet de Bord")}
             </button>
           </div>
         </header>
+
+        {/* ONGLET D'EXPLICATIONS EN HAUT DE PAGE (D'ABORD MASQUÉ PAR DÉFAUT, OUVERT VIA LE BOUTON GUIDE DU HEADER) */}
+        <TopExplanationTab
+          theme={theme}
+          isOpen={isTopExplanationOpen}
+          onToggle={() => setIsTopExplanationOpen((prev) => !prev)}
+          onClose={() => setIsTopExplanationOpen(false)}
+          onOpenArtworkTools={() => setIsArtworkToolsModalOpen(true)}
+          onOpenGalleryBridge={() => setIsGalleryBridgeOpen(true)}
+          onOpenVernissageModal={() => setIsVernissageModalOpen(true)}
+          onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
+          onOpenPressSocial={() => setIsPressSocialOpen(true)}
+          onOpenProfileModal={() => setIsProfileModalOpen(true)}
+          onOpenQrSalesModal={(tab) => {
+            if (tab) setQrSalesInitialTab(tab);
+            setIsQrSalesModalOpen(true);
+          }}
+          onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
+          onOpenShareModal={() => {
+            setShareRole("all");
+            setIsShareModalOpen(true);
+          }}
+          onOpenHubModal={() => setIsHubModalOpen(true)}
+          onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+        />
 
         {/* Main Interface Workspace */}
         <main id="main-workspace-anchor" className="flex-1 flex flex-col justify-center">
@@ -1278,17 +1392,17 @@ export default function App() {
               <div className="space-y-4">
                 <div className="text-center max-w-2xl mx-auto space-y-1 sm:space-y-2">
                   <span className="bg-[#c9a84c] text-black font-mono font-bold text-[10px] sm:text-xs px-3 py-0.5 uppercase tracking-widest inline-block">
-                    DÉMARRAGE DIRECT
+                    {t("start_direct", "DÉMARRAGE DIRECT")}
                   </span>
                   <h2 className={`text-xl sm:text-2xl md:text-3xl font-serif font-bold uppercase tracking-tight ${
                     theme === "dark-gold" ? "text-white" : "text-stone-950"
                   }`}>
-                    Déposez Vos Photos ou Fichiers Images
+                    {t("drop_title", "Déposez Vos Photos ou Fichiers Images")}
                   </h2>
                   <p className={`text-xs sm:text-sm font-sans ${
                     theme === "dark-gold" ? "text-neutral-400" : "text-stone-600"
                   }`}>
-                    Glissez-déposez le visuel d'une création unique ou sélectionnez plusieurs toiles pour lancer les analyses.
+                    {t("drop_desc", "Glissez-déposez le visuel d'une création unique ou sélectionnez plusieurs toiles pour lancer les analyses.")}
                   </p>
                 </div>
 
@@ -1366,12 +1480,12 @@ export default function App() {
                         : "bg-amber-100 text-amber-900 border-amber-300 hover:bg-[#c9a84c] hover:text-black"
                     }`}
                   >
-                    <span>🏷️ Cartels Muraux, QR & Livre d'Or</span>
+                    <span>{t("cartels_full_btn", "🏷️ Cartels Muraux, QR & Livre d'Or")}</span>
                   </button>
                 </div>
               </div>
 
-              {/* 2. ENSUITE DIRECTEMENT : SECTION EXPLICATION MASQUÉE AVEC « EXPLICATION » EN GROS ET FLÈCHE */}
+              {/* SECTION GUIDE & EXPLICATION SUR LA PREMIÈRE PAGE (MASQUÉE PAR DÉFAUT, VALORISÉE AVEC TOUTES LES POSSIBILITÉS) */}
               <ExplanationSection
                 theme={theme}
                 onOpenArtworkTools={() => setIsArtworkToolsModalOpen(true)}
@@ -1380,7 +1494,18 @@ export default function App() {
                 onOpenCollectorSales={() => setIsCollectorSalesOpen(true)}
                 onOpenPressSocial={() => setIsPressSocialOpen(true)}
                 onOpenProfileModal={() => setIsProfileModalOpen(true)}
-                onOpenQrSalesModal={() => setIsQrSalesModalOpen(true)}
+                onOpenQrSalesModal={(tab) => {
+                  if (tab) setQrSalesInitialTab(tab);
+                  setIsQrSalesModalOpen(true);
+                }}
+                onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
+                onOpenShareModal={() => {
+                  setShareRole("all");
+                  setIsShareModalOpen(true);
+                }}
+                onOpenHubModal={() => setIsHubModalOpen(true)}
+                onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
+                onOpenHistory={() => setIsHistoryOpen(true)}
               />
 
               {/* Loader indicator for presets or batch imports */}
@@ -2189,6 +2314,10 @@ export default function App() {
         activeArtworkImage={imageBase64}
         activeSeries={activeSeries}
         onAnalyzeGalleryTool={handleAnalyzeGalleryTool}
+        onOpenShareModal={() => {
+          setShareRole("galeriste");
+          setIsShareModalOpen(true);
+        }}
       />
 
       {/* Vernissage & Exhibition Events Modal (5 Outils Soirées & Événements) */}
@@ -2280,6 +2409,10 @@ export default function App() {
         activeSeries={activeSeries}
         cache={cache}
         onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
+        onOpenShareModal={() => {
+          setShareRole("visiteur");
+          setIsShareModalOpen(true);
+        }}
         initialTab={qrSalesInitialTab}
       />
 
@@ -2317,6 +2450,23 @@ export default function App() {
           imageSrc: imageBase64 || previewUrl || undefined
         }}
         activeSeries={activeSeries}
+        theme={theme}
+      />
+
+      {/* Modal Partage & Liens Directs (Artistes, Galeristes, Visiteurs, Acheteurs) */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        initialRole={shareRole}
+        profile={profile}
+        activeArtworkTitle={selectedArtwork?.title || saveTitle || (activeSeries.length > 0 ? activeSeries[0].title : "Œuvre d'Atelier")}
+        theme={theme}
+      />
+
+      {/* Modal Sélecteur de Langues Officielles (14 langues) */}
+      <LanguageSelectorModal
+        isOpen={isLanguageModalOpen}
+        onClose={() => setIsLanguageModalOpen(false)}
         theme={theme}
       />
 

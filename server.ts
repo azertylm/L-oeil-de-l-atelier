@@ -16,7 +16,7 @@ async function startServer() {
   // API endpoint for artwork analysis
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { image, images, mimeType, toolId, artistProfile } = req.body;
+      const { image, images, mimeType, toolId, artistProfile, language } = req.body;
 
       if (!image && (!images || images.length === 0)) {
         return res.status(400).json({ error: { message: "Aucune image fournie." } });
@@ -103,6 +103,30 @@ async function startServer() {
         if (desc) contextText += `\n- Note d'intention / Thèmes / Médium : ${desc}`;
         
         contextText += `\n\nCONSIGNE DE PERSONNALISATION ABSOLUE : Intègre de façon fluide, naturelle et élégante ces données de profil dans ta réponse. Rédige comme si tu parlais de cet artiste en particulier (ex: cite son nom dans la critique, mentionne ses objectifs dans l'Artist Statement, adapte les hashtags et publications de réseaux sociaux à son portfolio, etc.). Évite absolument les formules impersonnelles.`;
+      }
+
+      // Multilingual Official Translation Directive
+      const LANGUAGE_PROMPT_MAP: Record<string, string> = {
+        fr: "French (Français)",
+        en: "English",
+        it: "Italian (Italiano)",
+        de: "German (Deutsch)",
+        es: "Spanish (Español)",
+        pt: "European Portuguese (Português de Portugal)",
+        "pt-BR": "Brazilian Portuguese (Português do Brasil)",
+        zh: "Simplified Chinese (简体中文)",
+        ar: "Modern Standard Arabic (العربية الفصحى)",
+        ja: "Japanese (日本語)",
+        ko: "Korean (한국어)",
+        nl: "Dutch (Nederlands)",
+        ru: "Russian (Русский)",
+        sv: "Swedish (Svenska)"
+      };
+
+      if (language && LANGUAGE_PROMPT_MAP[language]) {
+        const targetLang = LANGUAGE_PROMPT_MAP[language];
+        contextText += `\n\n=== EXIGENCE LINGUISTIQUE OFFICIELLE : TOUTE LA RÉPONSE EN ${targetLang.toUpperCase()} ===\n`;
+        contextText += `IMPORTANT : L'utilisateur a sélectionné la langue "${targetLang}". Tu dois OBLIGATOIREMENT rédiger TOUTES les parties de ta réponse (titres, critiques d'art, analyses plastiques, démarches d'atelier, conseils, descriptions de cartels, poésies, etc.) en ${targetLang}.`;
       }
 
       // Supported Gemini models ordered for maximum availability and rapid fallback

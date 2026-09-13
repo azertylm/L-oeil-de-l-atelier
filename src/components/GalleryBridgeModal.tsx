@@ -3,7 +3,8 @@ import {
   Building2, Sparkles, Target, FileText, MapPin, Scale, Trophy,
   X, CheckCircle2, Copy, Check, Download, Send, ArrowRight,
   ShieldCheck, AlertCircle, RefreshCw, Layers, ChevronRight,
-  Sliders, Briefcase, Eye, Calendar, DollarSign, BookOpen
+  Sliders, Briefcase, Eye, Calendar, DollarSign, BookOpen,
+  Clock, Share2, Printer
 } from "lucide-react";
 import { ArtistProfile } from "../types.js";
 
@@ -15,6 +16,7 @@ interface GalleryBridgeModalProps {
   activeArtworkImage?: string | null;
   activeSeries?: any[];
   onAnalyzeGalleryTool?: (toolId: string) => Promise<any>;
+  onOpenShareModal?: () => void;
 }
 
 export default function GalleryBridgeModal({
@@ -24,9 +26,10 @@ export default function GalleryBridgeModal({
   profile,
   activeArtworkImage,
   activeSeries = [],
-  onAnalyzeGalleryTool
+  onAnalyzeGalleryTool,
+  onOpenShareModal
 }: GalleryBridgeModalProps) {
-  const [activeTab, setActiveTab] = useState<"match" | "dossier" | "murs" | "contrat" | "opencalls">("match");
+  const [activeTab, setActiveTab] = useState<"match" | "dossier" | "murs" | "contrat" | "opencalls" | "gain_temps">("gain_temps");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [loadingTool, setLoadingTool] = useState<string | null>(null);
 
@@ -257,23 +260,59 @@ Pour l'Artiste :                                Pour la Galerie :
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className={`p-2 border transition-colors ${
-              isDark 
-                ? "bg-black border-white/20 text-neutral-300 hover:text-white hover:border-[#c9a84c]" 
-                : "bg-white border-stone-300 text-stone-700 hover:text-black hover:border-black"
-            }`}
-            title="Fermer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenShareModal) {
+                  onOpenShareModal();
+                } else {
+                  const url = `${window.location.origin}${window.location.pathname}?view=galerie&role=gallerist`;
+                  navigator.clipboard.writeText(url);
+                  setCopiedKey("header_share");
+                  setTimeout(() => setCopiedKey(null), 2500);
+                }
+              }}
+              className="px-3 py-1.5 border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold"
+              title="Partager ce dossier express au galeriste"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{copiedKey === "header_share" ? "Lien Copié !" : "Partager au Galeriste"}</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className={`p-2 border transition-colors ${
+                isDark 
+                  ? "bg-black border-white/20 text-neutral-300 hover:text-white hover:border-[#c9a84c]" 
+                  : "bg-white border-stone-300 text-stone-700 hover:text-black hover:border-black"
+              }`}
+              title="Fermer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Top 5 Tabs Navigation */}
+        {/* Top 6 Tabs Navigation */}
         <div className={`flex border-b overflow-x-auto scrollbar-thin ${
           isDark ? "bg-black border-[#c9a84c]/20" : "bg-stone-100 border-stone-300"
         }`}>
+          <button
+            onClick={() => setActiveTab("gain_temps")}
+            className={`px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border-b-2 transition-all ${
+              activeTab === "gain_temps"
+                ? "border-[#c9a84c] text-[#c9a84c] bg-[#c9a84c]/10"
+                : isDark ? "border-transparent text-neutral-400 hover:text-white" : "border-transparent text-stone-600 hover:text-black"
+            }`}
+          >
+            <Clock className="w-4 h-4 text-[#c9a84c]" />
+            Gain de Temps Galeriste & Artiste
+            <span className="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.2 rounded-full uppercase">
+              ~15h gagnées
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab("match")}
             className={`px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 whitespace-nowrap border-b-2 transition-all ${
@@ -337,6 +376,241 @@ Pour l'Artiste :                                Pour la Galerie :
 
         {/* Tab Contents */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+
+          {/* TAB 0: GAIN DE TEMPS ARTISTE ⇄ GALERISTE */}
+          {activeTab === "gain_temps" && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Header Hero Banner */}
+              <div className={`p-5 sm:p-6 border relative overflow-hidden ${
+                isDark ? "bg-gradient-to-br from-[#1c180f] via-[#12100a] to-black border-[#c9a84c]" : "bg-gradient-to-br from-amber-100/80 via-amber-50 to-white border-[#c9a84c]"
+              }`}>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                  <div className="space-y-2 max-w-2xl">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-mono font-black uppercase px-2.5 py-1 bg-[#c9a84c] text-black">
+                        Impact & Révolution Métier
+                      </span>
+                      <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5">
+                        ⚡ Économie mesurée : ~15 heures par exposition
+                      </span>
+                    </div>
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold tracking-tight">
+                      Pourquoi Galeristes et Artistes gagnent un temps précieux avec L'Œil de l'Atelier
+                    </h3>
+                    <p className={`text-xs sm:text-sm font-sans leading-relaxed ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
+                      La relation entre artistes et galeristes souffre souvent de frottements logistiques : dossiers incomplets, dimensions floues, cartels bricolés la veille du vernissage et doutes sur les prix. Cette plateforme normalise l'ensemble des échanges pour se concentrer sur l'essentiel : <strong>la rencontre esthétique et la vente aux collectionneurs</strong>.
+                    </p>
+                  </div>
+
+                  {/* Actions Rapides Partage */}
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 w-full lg:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenShareModal) {
+                          onOpenShareModal();
+                        } else {
+                          const url = `${window.location.origin}${window.location.pathname}?view=galerie&role=gallerist`;
+                          navigator.clipboard.writeText(url);
+                          setCopiedKey("share_express");
+                          setTimeout(() => setCopiedKey(null), 2500);
+                        }
+                      }}
+                      className="px-5 py-3 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>{copiedKey === "share_express" ? "Lien Galeriste Copié !" : "Partager le Lien Galeriste"}</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("contrat")}
+                      className={`px-5 py-2.5 border font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        isDark ? "border-white/20 hover:border-[#c9a84c] text-white" : "border-stone-400 hover:border-black text-stone-900"
+                      }`}
+                    >
+                      <Scale className="w-4 h-4 text-[#c9a84c]" />
+                      <span>Contrat de Dépôt Clou à Clou ▶</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tableau Comparatif : Avant vs Avec L'Œil de l'Atelier */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Colonne d'Hier (Rouge) */}
+                <div className={`p-5 border space-y-4 ${
+                  isDark ? "bg-rose-950/20 border-rose-900/40 text-rose-200" : "bg-rose-50 border-rose-200 text-rose-900"
+                }`}>
+                  <div className="flex items-center justify-between border-b pb-2 border-rose-800/30">
+                    <h4 className="font-serif font-bold text-sm uppercase tracking-wide flex items-center gap-2 text-rose-400">
+                      <AlertCircle className="w-4 h-4" /> Les méthodes traditionnelles (Perte : ~18h)
+                    </h4>
+                    <span className="text-[10px] font-mono opacity-75">Frottements constants</span>
+                  </div>
+                  <ul className="space-y-3 text-xs">
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold">✕</span>
+                      <span><strong>Dossiers disparates :</strong> E-mails avec pièces jointes lourdes expirées, photos non calibrées, absence de texte curatorial rédigé.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold">✕</span>
+                      <span><strong>Panique des cartels :</strong> Création manuelle dans Word la veille de l'inauguration, polices mal ajustées, découpage au cutter en urgence.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold">✕</span>
+                      <span><strong>Visiteurs intimidés :</strong> Peur de demander le prix au galeriste, silence gênant, absence de médiation pour les personnes pressées.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold">✕</span>
+                      <span><strong>Vente complexe :</strong> Contrats rédigés sur un coin de table, certificats d'authenticité non conformes au Décret Marcus.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Colonne L'Œil de l'Atelier (Vert / Or) */}
+                <div className={`p-5 border space-y-4 ${
+                  isDark ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-200" : "bg-emerald-50 border-emerald-300 text-emerald-950"
+                }`}>
+                  <div className="flex items-center justify-between border-b pb-2 border-emerald-500/30">
+                    <h4 className="font-serif font-bold text-sm uppercase tracking-wide flex items-center gap-2 text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4" /> Avec L'Œil de l'Atelier (Gain : 15 min)
+                    </h4>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">Fluidité Professionnelle</span>
+                  </div>
+                  <ul className="space-y-3 text-xs">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Dossier d'Expertise Normalisé :</strong> Fiche technique, statement, filiations, critique littéraire et argumentaire prix prêts en 1 clic.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Cartels & QR Codes Imprimables :</strong> Planche musée avec QR code de vente instantanée et audioguide visiteur multilingue.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Livre d'Or & Options 48h :</strong> Le visiteur scanne discrètement, écoute la médiation, pose une option ou finalise l'achat en direct.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Contrat & Certificat COA :</strong> Cession légale CPI L. 111-1 et Certificat Décret n° 81-255 avec QR code de traçabilité infalsifiable.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Fiche Technique Normalisée pour la Galerie */}
+              <div className={`p-5 border space-y-4 ${
+                isDark ? "bg-[#141414] border-white/10" : "bg-white border-stone-300"
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3 border-white/10">
+                  <div>
+                    <h4 className="font-serif font-bold text-base text-[#c9a84c] flex items-center gap-2">
+                      <Briefcase className="w-4 h-4" /> Fiche Technique Normalisée d'Accrochage & Dépôt
+                    </h4>
+                    <p className="text-xs opacity-75 mt-0.5">
+                      Les éléments indispensables attendus par le régisseur et le curateur de la galerie.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const text = `FICHE TECHNIQUE NORMALISÉE D'ACCROCHAGE & DE DÉPÔT
+Artiste : ${profile.name || "Artiste de l'Atelier"}
+Style & Courant : ${profile.style || "Art Contemporain"}
+Contact : ${profile.contactEmail || "Non renseigné"} • Téléphone : ${profile.phone || "Non renseigné"}
+Site web : ${profile.web || "Non renseigné"}
+
+Œuvre d'Atelier Référencée :
+- Nombre d'œuvres dans la série : ${activeSeries.length > 0 ? activeSeries.length : 1}
+- Système d'accrochage : Pitons pitonnés et câble acier renforcé
+- Conditionnement : Caisse d'art en bois ou film bulle multicouche
+- Assurance transport : Clou à clou obligatoire (valeur agréée)
+- Modalités de commission recommandées : 50/50 ou 40/60 selon contrat de dépôt
+
+Généré via la plateforme L'Œil de l'Atelier • Passerelle Galeries`;
+                      navigator.clipboard.writeText(text);
+                      setCopiedKey("fiche_tech");
+                      setTimeout(() => setCopiedKey(null), 2500);
+                    }}
+                    className="px-3.5 py-1.5 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copiedKey === "fiche_tech" ? "Copié !" : "Copier la Fiche Technique"}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className={`p-3 border ${isDark ? "bg-black/60 border-neutral-800" : "bg-stone-50 border-stone-200"}`}>
+                    <span className="block text-[10px] font-mono text-[#c9a84c] uppercase font-bold">1. Accrochage & Montage</span>
+                    <p className="mt-1 opacity-85">Prêt à poser, pitons sécurisés, dos propre, indications de niveau horizontal.</p>
+                  </div>
+                  <div className={`p-3 border ${isDark ? "bg-black/60 border-neutral-800" : "bg-stone-50 border-stone-200"}`}>
+                    <span className="block text-[10px] font-mono text-[#c9a84c] uppercase font-bold">2. Logistique & Transport</span>
+                    <p className="mt-1 opacity-85">Emballage professionnel, étiquetage code-barre ou QR de l'œuvre sur le filmage.</p>
+                  </div>
+                  <div className={`p-3 border ${isDark ? "bg-black/60 border-neutral-800" : "bg-stone-50 border-stone-200"}`}>
+                    <span className="block text-[10px] font-mono text-[#c9a84c] uppercase font-bold">3. Vente & Cession</span>
+                    <p className="mt-1 opacity-85">Contrat de dépôt clou à clou, certificat COA Décret Marcus prêt pour le collectionneur.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modèle de Premier Contact avec le Galeriste */}
+              <div className={`p-5 border space-y-3 ${
+                isDark ? "bg-black border-[#c9a84c]/30" : "bg-amber-50/50 border-[#c9a84c]"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <h4 className="font-serif font-bold text-sm uppercase text-[#c9a84c] flex items-center gap-2">
+                    <Send className="w-4 h-4" /> Modèle d'E-mail Court pour le Galeriste (Taux de réponse record)
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const emailText = `Objet : Proposition d'exposition & Dossier d'Atelier — ${profile.name || "Artiste"}
+
+Madame, Monsieur le Galeriste,
+
+Je me permets de vous contacter car la ligne esthétique de votre galerie entre en résonance directe avec ma recherche picturale actuelle.
+
+Pour vous faire gagner un temps précieux, j'ai synthétisé l'ensemble de ma série sur un espace numérique structuré et normalisé :
+👉 ${window.location.origin}${window.location.pathname}?view=galerie&role=gallerist
+
+Vous y trouverez en consultation immédiate :
+• Les reproductions haute définition de la série et la note d'intention
+• Les cartels muraux avec QR codes audioguides interactifs
+• Les fiches techniques d'accrochage et l'inventaire prêt pour contrat de dépôt
+
+Seriez-vous disponible pour un échange téléphonique de 10 minutes cette semaine afin d'envisager une présentation d'œuvres à votre comité ?
+
+Bien à vous,
+${profile.name || "Artiste de l'Atelier"}
+${profile.contactEmail ? `Email : ${profile.contactEmail}` : ""}
+${profile.web ? `Site : ${profile.web}` : ""}`;
+                      navigator.clipboard.writeText(emailText);
+                      setCopiedKey("email_galeriste");
+                      setTimeout(() => setCopiedKey(null), 2500);
+                    }}
+                    className="text-xs font-mono font-bold text-[#c9a84c] hover:underline flex items-center gap-1"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copiedKey === "email_galeriste" ? "E-mail copié !" : "Copier le texte d'email"}</span>
+                  </button>
+                </div>
+                <div className={`p-4 font-mono text-xs leading-relaxed border ${
+                  isDark ? "bg-[#0c0c0c] border-neutral-800 text-neutral-300" : "bg-white border-stone-300 text-stone-800"
+                }`}>
+                  <p className="text-[#c9a84c] font-bold mb-1">Objet : Proposition d'exposition & Dossier d'Atelier — {profile.name || "Artiste"}</p>
+                  <p>Madame, Monsieur le Galeriste,</p>
+                  <p className="mt-2">Je me permets de vous contacter car la ligne esthétique de votre galerie entre en résonance directe avec ma recherche picturale actuelle.</p>
+                  <p className="mt-2">Pour vous faire gagner un temps précieux, j'ai synthétisé l'ensemble de ma série sur un espace numérique structuré et normalisé (cartels, fiches techniques, audioguides, contrat de dépôt) :</p>
+                  <p className="mt-1 text-[#c9a84c] font-bold underline">{window.location.origin}{window.location.pathname}?view=galerie&role=gallerist</p>
+                  <p className="mt-2">Seriez-vous disponible pour un échange téléphonique de 10 minutes cette semaine ?</p>
+                  <p className="mt-2">Bien à vous,<br/><strong>{profile.name || "Artiste de l'Atelier"}</strong></p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TAB 1: CURATOR MATCHMAKING */}
           {activeTab === "match" && (

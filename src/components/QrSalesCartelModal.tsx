@@ -10,10 +10,12 @@ import {
   VolumeX, Play, Pause, Share2, CheckCircle2, ShieldCheck, 
   Layers, ExternalLink, Bookmark, HelpCircle, X, Search,
   ArrowRight, Sliders, Smartphone, Palette, FileText, Send,
-  Heart, MessageSquare, Briefcase, Calculator, ThumbsUp, FileDown, Clock, Info
+  Heart, MessageSquare, Briefcase, Calculator, ThumbsUp, FileDown, Clock, Info,
+  Award, CreditCard, Lock
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { ArtistProfile } from "../types.js";
+import { useLanguage } from "../i18n/LanguageContext.js";
 
 export interface VisitorGuestbookEntry {
   id: string;
@@ -50,7 +52,8 @@ interface QrSalesCartelModalProps {
   activeSeries?: any[];
   cache?: Record<string, any>;
   onOpenGlobalReport?: () => void;
-  initialTab?: "generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels";
+  onOpenShareModal?: () => void;
+  initialTab?: "generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels" | "contract_coa";
 }
 
 // 50 Innovations Tripartites (Artistes • Galeristes • Visiteurs)
@@ -172,10 +175,12 @@ export default function QrSalesCartelModal({
   activeSeries = [],
   cache = {},
   onOpenGlobalReport,
+  onOpenShareModal,
   initialTab = "generator"
 }: QrSalesCartelModalProps) {
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<"generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels">(initialTab);
+  const [activeTab, setActiveTab] = useState<"generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels" | "contract_coa">(initialTab);
+  const { t, language, langMeta } = useLanguage();
 
   // Cartel & Sale Parameters
   const [artworkTitle, setArtworkTitle] = useState<string>(activeArtworkTitle);
@@ -194,6 +199,23 @@ export default function QrSalesCartelModal({
   const [cartelStyle, setCartelStyle] = useState<"museum_white" | "atelier_dark" | "gold_luxury">("museum_white");
   const [qrDestination, setQrDestination] = useState<"visitor_sheet" | "payment_link" | "whatsapp">("visitor_sheet");
   const [customPaymentUrl, setCustomPaymentUrl] = useState<string>("https://buy.stripe.com/demo_art_atelier");
+
+  // Purchase Contract & Certificate of Authenticity (COA) State
+  const [buyerName, setBuyerName] = useState<string>("Jean de Saint-Germain");
+  const [buyerAddress, setBuyerAddress] = useState<string>("14 Avenue des Arts, 75008 Paris");
+  const [buyerEmail, setBuyerEmail] = useState<string>("jean.saintgermain@art-collection.fr");
+  const [buyerPhone, setBuyerPhone] = useState<string>("+33 (0)6 12 34 56 78");
+  const [sellerType, setSellerType] = useState<"galerie" | "artiste">("galerie");
+  const [paymentOption, setPaymentOption] = useState<"comptant" | "acompte_30">("comptant");
+  const [paymentMode, setPaymentMode] = useState<"virement" | "carte" | "cheque">("virement");
+  const [vatRegime, setVatRegime] = useState<"5.5" | "franchise">("5.5");
+  const [certificateNumber, setCertificateNumber] = useState<string>(() => `COA-2026-${Math.floor(100000 + Math.random() * 900000)}`);
+  const [contractNumber, setContractNumber] = useState<string>(() => `CTR-2026-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [contractDate, setContractDate] = useState<string>(() => new Date().toLocaleDateString("fr-FR"));
+  const [deliveryDate, setDeliveryDate] = useState<string>(() => new Date(Date.now() + 86400000 * 7).toLocaleDateString("fr-FR"));
+  const [buyerNotes, setBuyerNotes] = useState<string>("Remise en main propre en galerie après décrochage de l'exposition.");
+  const [contractCopied, setContractCopied] = useState<boolean>(false);
+  const [coaCopied, setCoaCopied] = useState<boolean>(false);
 
   // Visitor interactive state
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
@@ -237,6 +259,8 @@ export default function QrSalesCartelModal({
 
   const isDark = theme === "dark-gold";
   const printRef = useRef<HTMLDivElement>(null);
+  const coaPrintRef = useRef<HTMLDivElement>(null);
+  const contractPrintRef = useRef<HTMLDivElement>(null);
 
   // Synchronize initialTab if changed
   useEffect(() => {
@@ -265,13 +289,30 @@ export default function QrSalesCartelModal({
     }
   }, [cache?.cote]);
 
-  // Audio guide speech synthesis
-  const speechText = cache.critique?.critique || cache.statement?.statement || cache.style?.style || 
-    `Vous contemplez l'œuvre ${artworkTitle}, créée en ${artworkYear} par ${artistName}. Cette pièce en ${artworkMedium} déploie une tension chromatique vibrante et un travail de matière profond. Une invitation contemplative au cœur de la sensibilité contemporaine.`;
+  // Audio guide speech synthesis in the selected language
+  const fallbackSpeeches: Record<string, string> = {
+    fr: `Vous contemplez l'œuvre ${artworkTitle}, créée en ${artworkYear} par ${artistName}. Cette pièce en ${artworkMedium} déploie une tension chromatique vibrante et un travail de matière profond. Une invitation contemplative au cœur de la sensibilité contemporaine.`,
+    en: `You are contemplating ${artworkTitle}, created in ${artworkYear} by ${artistName}. This ${artworkMedium} piece unfolds a vibrant chromatic presence and deep material mastery. A contemplative journey into contemporary sensibility.`,
+    it: `State contemplando l'opera ${artworkTitle}, creata nel ${artworkYear} da ${artistName}. Questo lavoro in ${artworkMedium} sprigiona una vibrante armonia cromatica.`,
+    de: `Sie betrachten das Kunstwerk ${artworkTitle}, geschaffen im Jahr ${artworkYear} von ${artistName}. Dieses Werk in ${artworkMedium} entfaltet eine kraftvolle chromatische Tiefe.`,
+    es: `Está contemplando la obra ${artworkTitle}, creada en ${artworkYear} por ${artistName}. Esta pieza en ${artworkMedium} despliega una vibrante armonía cromática.`,
+    pt: `Está a contemplar a obra ${artworkTitle}, criada em ${artworkYear} por ${artistName}. Esta peça em ${artworkMedium} desenvolve uma profunda harmonia cromática.`,
+    "pt-BR": `Você está contemplando a obra ${artworkTitle}, criada em ${artworkYear} por ${artistName}. Esta peça em ${artworkMedium} apresenta uma harmonia cromática vibrante.`,
+    zh: `您正在欣赏 ${artistName} 于 ${artworkYear} 年创作的《${artworkTitle}》。这幅采用 ${artworkMedium} 的艺术作品展现了深邃的色彩与材质张力。`,
+    ar: `أنت تتأمل العمل الفني ${artworkTitle}، الذي أبدعه الفنان ${artistName} في عام ${artworkYear}. يقدم هذا العمل المنفذ بتقنية ${artworkMedium} تناغماً لونياً وتجربة تأملية عميقة.`,
+    ja: `あなたは${artistName}による${artworkYear}年の作品『${artworkTitle}』を鑑賞しています。${artworkMedium}で描かれた色彩の調和と深い質感をお楽しみください。`,
+    ko: `${artistName} 작가가 ${artworkYear}년에 제작한 작품 《${artworkTitle}》을 감상하고 계십니다. ${artworkMedium} 기법으로 완성된 색채와 질감의 조화를 느껴보세요.`,
+    nl: `U bewondert het kunstwerk ${artworkTitle}, gemaakt in ${artworkYear} door ${artistName}. Dit werk in ${artworkMedium} toont een krachtige chromatische diepte.`,
+    ru: `Вы созерцаете произведение «${artworkTitle}», созданное в ${artworkYear} году художником ${artistName}. Работа выполнена в технике ${artworkMedium}.`,
+    sv: `Du betraktar konstverket ${artworkTitle}, skapat år ${artworkYear} av ${artistName}. Detta verk i ${artworkMedium} visar en djup kromatisk harmoni.`
+  };
+
+  const defaultSpeech = fallbackSpeeches[language] || fallbackSpeeches.fr;
+  const speechText = cache.critique?.critique || cache.statement?.statement || cache.style?.style || defaultSpeech;
 
   const handleToggleSpeech = () => {
     if (!('speechSynthesis' in window)) {
-      alert("La synthèse vocale n'est pas supportée par ce navigateur.");
+      alert(t("speech_not_supported", "La synthèse vocale n'est pas supportée par ce navigateur."));
       return;
     }
 
@@ -281,7 +322,7 @@ export default function QrSalesCartelModal({
     } else {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(speechText);
-      utterance.lang = "fr-FR";
+      utterance.lang = langMeta.bcp47 || "fr-FR";
       utterance.rate = 0.92; // slightly slower for gallery mediation
       utterance.pitch = 1.0;
       utterance.onend = () => setIsPlayingAudio(false);
@@ -450,16 +491,37 @@ export default function QrSalesCartelModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className={`p-2 transition-colors cursor-pointer ${
-              isDark ? "text-neutral-400 hover:text-white hover:bg-white/10" : "text-stone-500 hover:text-black hover:bg-stone-200"
-            }`}
-            title="Fermer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenShareModal) {
+                  onOpenShareModal();
+                } else {
+                  const url = `${window.location.origin}${window.location.pathname}?view=cartels&mode=visitor`;
+                  navigator.clipboard.writeText(url);
+                  setCopiedKey("header_share_cartel");
+                  setTimeout(() => setCopiedKey(null), 2500);
+                }
+              }}
+              className="px-3 py-1.5 border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-mono font-bold"
+              title="Partager ce cartel et l'audioguide aux visiteurs & acheteurs"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{copiedKey === "header_share_cartel" ? "Lien Copié !" : "Partager"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className={`p-2 transition-colors cursor-pointer ${
+                isDark ? "text-neutral-400 hover:text-white hover:bg-white/10" : "text-stone-500 hover:text-black hover:bg-stone-200"
+              }`}
+              title="Fermer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -476,7 +538,7 @@ export default function QrSalesCartelModal({
             }`}
           >
             <Tag className="w-4 h-4" />
-            <span>1. Cartel & QR Vente</span>
+            <span>{t("cartel_tab_generator", "1. Cartel & QR Vente")}</span>
           </button>
 
           <button
@@ -489,7 +551,7 @@ export default function QrSalesCartelModal({
             }`}
           >
             <Eye className="w-4 h-4" />
-            <span>2. Vision Visiteur</span>
+            <span>{t("cartel_tab_visitor", "2. Vision Visiteur")}</span>
             <span className="text-[9px] bg-red-600 text-white font-black px-1.5 py-0.2 rounded-full uppercase">
               Audioguide
             </span>
@@ -505,7 +567,7 @@ export default function QrSalesCartelModal({
             }`}
           >
             <MessageSquare className="w-4 h-4" />
-            <span>3. Livre d'Or & Réservations</span>
+            <span>{t("cartel_tab_guestbook", "3. Livre d'Or & Réservations")}</span>
             <span className="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.2 rounded-full">
               {guestbookEntries.length + visitorOptions.length}
             </span>
@@ -521,7 +583,23 @@ export default function QrSalesCartelModal({
             }`}
           >
             <Printer className="w-4 h-4" />
-            <span>4. Impression Murale</span>
+            <span>{t("cartel_tab_print", "4. Impression Murale")}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("contract_coa")}
+            className={`flex items-center gap-2 px-4 sm:px-5 py-3 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === "contract_coa"
+                ? "border-[#c9a84c] text-[#c9a84c] bg-[#c9a84c]/10"
+                : isDark ? "border-transparent text-neutral-400 hover:text-white" : "border-transparent text-stone-600 hover:text-black"
+            }`}
+          >
+            <Award className="w-4 h-4 text-[#c9a84c]" />
+            <span>{t("cartel_tab_contract_coa", "5. Achat, Contrat & Certificat COA")}</span>
+            <span className="text-[9px] bg-emerald-600 text-white font-black px-1.5 py-0.2 rounded-full uppercase">
+              Sécurisé
+            </span>
           </button>
 
           <button
@@ -534,7 +612,7 @@ export default function QrSalesCartelModal({
             }`}
           >
             <Sparkles className="w-4 h-4 text-[#c9a84c]" />
-            <span>5. 50 Leviers Tripartites</span>
+            <span>{t("cartel_tab_ideas", "6. 50 Leviers Tripartites")}</span>
             <span className="text-[9px] bg-[#c9a84c] text-black font-black px-1.5 py-0.2 rounded-full">
               50
             </span>
@@ -1182,6 +1260,43 @@ export default function QrSalesCartelModal({
                   )}
                 </div>
 
+                {/* CTA Direct Achat Immédiat avec Contrat & Certificat COA */}
+                <div className={`p-5 border flex flex-col sm:flex-row items-center justify-between gap-4 ${
+                  isDark ? "bg-gradient-to-r from-[#1e190f] via-[#15120a] to-black border-[#c9a84c]" : "bg-gradient-to-r from-amber-100/90 via-amber-50 to-white border-[#c9a84c]"
+                }`}>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 flex items-center justify-center bg-[#c9a84c] text-black shrink-0 shadow-md">
+                      <Award className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-serif font-bold text-sm sm:text-base uppercase tracking-wide text-[#c9a84c]">
+                          Acquérir cette Œuvre Originale en 1 Clic
+                        </h4>
+                        <span className="text-[9px] font-mono bg-emerald-600 text-white font-black px-1.5 py-0.2 rounded-full uppercase">
+                          Vente Sécurisée
+                        </span>
+                      </div>
+                      <p className={`text-xs mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
+                        Générez immédiatement le Bon de Commande, le Contrat de Cession légal et le Certificat d'Authenticité (COA) infalsifiable Décret Marcus n° 81-255 avec QR code de vérification.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (visitorName) setBuyerName(visitorName);
+                      if (visitorEmail) setBuyerEmail(visitorEmail);
+                      setActiveTab("contract_coa");
+                    }}
+                    className="py-3 px-6 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-lg"
+                  >
+                    <span>Établir le Contrat & Certificat COA</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
                 {/* Formulaire d'Option & Réservation pour le Visiteur */}
                 <div className={`p-5 border space-y-4 ${
                   isDark ? "bg-black/60 border-white/10" : "bg-stone-50 border-stone-200"
@@ -1650,7 +1765,457 @@ export default function QrSalesCartelModal({
             </div>
           )}
 
-          {/* TAB 5: LES 50 LEVIERS TRIPARTITES */}
+          {/* TAB 5: ACHAT EXPRESS, CONTRAT DE VENTE & CERTIFICAT D'AUTHENTICITÉ (COA) */}
+          {activeTab === "contract_coa" && (
+            <div className="space-y-6 animate-fadeIn">
+              
+              {/* Header Banner */}
+              <div className={`p-5 sm:p-6 border relative overflow-hidden ${
+                isDark ? "bg-gradient-to-r from-[#1e190f] via-[#141209] to-black border-[#c9a84c]" : "bg-gradient-to-r from-amber-100/80 via-amber-50 to-white border-[#c9a84c]"
+              }`}>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="space-y-2 max-w-2xl">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-[#c9a84c] text-black">
+                        Module Vente & Juridique
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5">
+                        Conforme Décret Marcus n° 81-255 du 3 mars 1981
+                      </span>
+                    </div>
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold tracking-tight">
+                      Achat Express • Contrat de Cession & Certificat d'Authenticité (COA)
+                    </h3>
+                    <p className={`text-xs sm:text-sm font-sans leading-relaxed ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
+                      Sécurisez immédiatement la vente d'une œuvre originale avec le collectionneur ou visiteur : contrat de cession complet préservant les droits d'auteur (CPI L. 111-1) et certificat d'authenticité de luxe avec QR code infalsifiable.
+                    </p>
+                  </div>
+
+                  {/* Actions d'Impression & Export */}
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const contractText = `CONTRAT DE CESSION & BON DE COMMANDE D'ŒUVRE D'ART ORIGINALE
+Référence : ${contractNumber}
+Date d'établissement : ${contractDate}
+
+VENDEUR :
+${sellerType === "galerie" ? `Galerie : ${galleryName}\nContact : ${contactEmail} • ${contactPhone}` : `Artiste Auteur : ${artistName}\nContact : ${profile.contactEmail || contactEmail}\nSite web : ${profile.web || "Non renseigné"}`}
+
+ACQUÉREUR :
+Nom / Raison Sociale : ${buyerName}
+Adresse : ${buyerAddress}
+Email : ${buyerEmail} • Téléphone : ${buyerPhone}
+
+DÉSIGNATION DE L'ŒUVRE ORIGINALE :
+- Titre : « ${artworkTitle} »
+- Artiste : ${artistName}
+- Année : ${artworkYear}
+- Médium / Technique : ${artworkMedium}
+- Dimensions : ${artworkDimensions}
+- Caractéristique : Exemplaire original unique 1/1
+- Certificat d'Authenticité associé : N° ${certificateNumber} (Décret Marcus n° 81-255)
+
+PRIX ET RÈGLEMENT :
+- Prix convenu : ${artworkPrice} TTC (${vatRegime === "5.5" ? "TVA à 5,5% - Art. 278-0 bis CGI" : "Franchise de TVA - Art. 293 B CGI"})
+- Modalité : ${paymentOption === "comptant" ? "Paiement comptant à la commande" : "Acompte de 30% à la réservation, solde à la livraison"}
+- Mode de paiement : ${paymentMode === "virement" ? "Virement bancaire" : paymentMode === "carte" ? "Carte bancaire / Stripe" : "Chèque bancaire certifié"}
+- Livraison prévue : ${deliveryDate} (${buyerNotes})
+
+CLAUSES LÉGALES :
+1. Réserve de propriété : Le transfert de propriété est effectif dès l'encaissement intégral du prix convenu.
+2. Droits d'auteur : Conformément aux articles L. 111-1 et suivants du CPI, l'artiste ${artistName} conserve l'intégralité de ses droits moraux et patrimoniaux sur l'œuvre.
+3. Authenticité : L'œuvre est garantie originale et unique.`;
+                        navigator.clipboard.writeText(contractText);
+                        setContractCopied(true);
+                        setTimeout(() => setContractCopied(false), 2500);
+                      }}
+                      className="px-4 py-2.5 bg-black/60 border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Copy className="w-4 h-4" />
+                      <span>{contractCopied ? "Contrat Copié !" : "Copier Contrat"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.print();
+                      }}
+                      className="px-5 py-2.5 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>Imprimer le Dossier de Vente</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contenu Principal : Grille 2 Colonnes */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Colonne Gauche : Configuration & Contrat de Cession (6 cols) */}
+                <div className="lg:col-span-6 space-y-5">
+                  
+                  {/* Formulaire Acquéreur & Transaction */}
+                  <div className={`p-5 border space-y-4 ${
+                    isDark ? "bg-[#121212] border-white/10" : "bg-stone-50 border-stone-200"
+                  }`}>
+                    <div className="flex items-center justify-between border-b pb-2.5 border-white/10">
+                      <h4 className="font-serif font-bold text-sm uppercase tracking-wide flex items-center gap-2 text-[#c9a84c]">
+                        <User className="w-4 h-4" /> Informations Acquéreur & Modalités
+                      </h4>
+                      <span className="text-[10px] font-mono opacity-60">
+                        Réf. {contractNumber}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Nom / Prénom ou Entreprise</label>
+                        <input
+                          type="text"
+                          value={buyerName}
+                          onChange={(e) => setBuyerName(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Email de l'Acquéreur</label>
+                        <input
+                          type="text"
+                          value={buyerEmail}
+                          onChange={(e) => setBuyerEmail(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Téléphone de l'Acquéreur</label>
+                        <input
+                          type="text"
+                          value={buyerPhone}
+                          onChange={(e) => setBuyerPhone(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Entité Vendeuse</label>
+                        <select
+                          value={sellerType}
+                          onChange={(e: any) => setSellerType(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        >
+                          <option value="galerie">Galerie ({galleryName})</option>
+                          <option value="artiste">Artiste Direct ({artistName})</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-mono opacity-75 mb-1">Adresse de Facturation / Domicile</label>
+                      <input
+                        type="text"
+                        value={buyerAddress}
+                        onChange={(e) => setBuyerAddress(e.target.value)}
+                        className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300 text-xs"}`}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Prix de Cession</label>
+                        <input
+                          type="text"
+                          value={artworkPrice}
+                          onChange={(e) => setArtworkPrice(e.target.value)}
+                          className={`w-full p-2 border font-bold text-[#c9a84c] ${isDark ? "bg-black border-neutral-700" : "bg-white border-stone-300"}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Modalité</label>
+                        <select
+                          value={paymentOption}
+                          onChange={(e: any) => setPaymentOption(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        >
+                          <option value="comptant">Comptant (100%)</option>
+                          <option value="acompte_30">Acompte 30%</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Règlement</label>
+                        <select
+                          value={paymentMode}
+                          onChange={(e: any) => setPaymentMode(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        >
+                          <option value="virement">Virement Bancaire</option>
+                          <option value="carte">Carte / En Ligne</option>
+                          <option value="cheque">Chèque Certifié</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Date du Contrat</label>
+                        <input
+                          type="text"
+                          value={contractDate}
+                          onChange={(e) => setContractDate(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono opacity-75 mb-1">Mise à disposition / Livraison</label>
+                        <input
+                          type="text"
+                          value={deliveryDate}
+                          onChange={(e) => setDeliveryDate(e.target.value)}
+                          className={`w-full p-2 border ${isDark ? "bg-black border-neutral-700 text-white" : "bg-white border-stone-300"}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visualiseur de Contrat Imprimable */}
+                  <div className={`p-5 border space-y-3 font-mono text-xs leading-relaxed ${
+                    isDark ? "bg-black border-[#c9a84c]/30 text-neutral-300" : "bg-white border-stone-300 text-stone-800"
+                  }`}>
+                    <div className="flex items-center justify-between border-b pb-2 border-white/10">
+                      <span className="font-bold text-[#c9a84c] uppercase">Contrat de Vente & Cession d'Œuvre d'Art</span>
+                      <span className="text-[10px] opacity-60">Art. L. 111-1 CPI</span>
+                    </div>
+
+                    <div className="space-y-2 text-[11px] max-h-80 overflow-y-auto pr-2 scrollbar-thin">
+                      <p><strong>RÉFÉRENCE :</strong> {contractNumber} • Date : {contractDate}</p>
+                      <p><strong>1. VENDEUR :</strong> {sellerType === "galerie" ? `${galleryName} (pour le compte de l'artiste)` : `L'Artiste ${artistName}`}</p>
+                      <p><strong>2. ACQUÉREUR :</strong> {buyerName} — {buyerAddress}</p>
+                      <p><strong>3. OBJET DE LA CESSION :</strong> L'œuvre originale intitulée « {artworkTitle} », créée en {artworkYear} par {artistName}. Médium : {artworkMedium}. Dimensions : {artworkDimensions}. Exemplaire unique (1/1).</p>
+                      <p><strong>4. PRIX & TVA :</strong> Montant de {artworkPrice} TTC réglé par {paymentMode} ({paymentOption === "comptant" ? "Paiement comptant" : "Acompte de 30%"}).</p>
+                      <p><strong>5. RÉSERVE DE PROPRIÉTÉ :</strong> Le vendeur conserve la propriété de l'œuvre jusqu'au paiement intégral du prix convenu.</p>
+                      <p><strong>6. DROITS D'AUTEUR :</strong> La présente cession ne transfère que la propriété matérielle de l'œuvre. Les droits de reproduction, représentation et adaptation demeurent la propriété exclusive et inaliénable de l'artiste {artistName} (Articles L. 111-1 et suivants du Code de la Propriété Intellectuelle).</p>
+                      <p><strong>7. CERTIFICAT LIÉ :</strong> Un Certificat d'Authenticité N° {certificateNumber} conforme au Décret Marcus n° 81-255 du 3 mars 1981 est remis à l'acquéreur.</p>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-[10px] text-emerald-400 font-bold">✓ Clauses légales conformes</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.print();
+                        }}
+                        className="text-xs font-bold text-[#c9a84c] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" /> Imprimer ce Contrat ▶
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Colonne Droite : CERTIFICAT D'AUTHENTICITÉ (COA) INFALSIFIABLE (6 cols) */}
+                <div className="lg:col-span-6 space-y-4">
+                  
+                  {/* Titre & Info Décret Marcus */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-serif font-bold text-sm uppercase tracking-wide flex items-center gap-2 text-[#c9a84c]">
+                        <Award className="w-4 h-4" /> Certificat d'Authenticité (COA) Infalsifiable
+                      </h4>
+                      <p className="text-[10px] opacity-75 font-mono">
+                        Décret n° 81-255 du 3 mars 1981 • Référence unique : {certificateNumber}
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const coaText = `CERTIFICAT D'AUTHENTICITÉ • ATELIER D'ART
+Numéro d'enregistrement officiel : ${certificateNumber}
+
+Je soussigné(e), ${artistName}, Artiste Auteur, certifie que l'œuvre originale désignée ci-après a été entièrement exécutée de ma main selon les règles de l'art, et constitue un exemplaire original et unique, conformément aux dispositions du Décret n° 81-255 du 3 mars 1981 relatif à la répression des fraudes en matière de transactions d'œuvres d'art.
+
+TITRE DE L'ŒUVRE : « ${artworkTitle} »
+ARTISTE CRÉATEUR : ${artistName}
+ANNÉE DE RÉALISATION : ${artworkYear}
+TECHNIQUE & SUPPORT : ${artworkMedium}
+DIMENSIONS : ${artworkDimensions}
+TIRAGE / ÉDITION : Exemplaire Unique Original 1/1
+VALEUR DÉCLARÉE : ${artworkPrice} TTC
+GALERIE DÉPOSITAIRE : ${galleryName}
+ACQUÉREUR : ${buyerName}
+DATE D'ÉMISSION : ${contractDate}
+
+Vérification d'authenticité numérique :
+${window.location.origin}${window.location.pathname}?verify=${certificateNumber}&title=${encodeURIComponent(artworkTitle)}&artist=${encodeURIComponent(artistName)}`;
+                        navigator.clipboard.writeText(coaText);
+                        setCoaCopied(true);
+                        setTimeout(() => setCoaCopied(false), 2500);
+                      }}
+                      className="text-xs font-mono font-bold text-[#c9a84c] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>{coaCopied ? "Certificat copié !" : "Copier le texte COA"}</span>
+                    </button>
+                  </div>
+
+                  {/* Le Certificat Physique (Style Parchemin d'Art Grand Luxe) */}
+                  <div 
+                    ref={coaPrintRef}
+                    className={`p-6 sm:p-8 border-4 border-double shadow-2xl relative space-y-6 ${
+                      isDark 
+                        ? "bg-[#0d0d0d] border-[#c9a84c] text-white" 
+                        : "bg-[#fdfaf3] border-[#b8973e] text-stone-900"
+                    }`}
+                  >
+                    {/* Filigrane d'Art & Sceau Doré */}
+                    <div className="absolute top-4 right-4 opacity-15 pointer-events-none">
+                      <Award className="w-32 h-32 text-[#c9a84c]" />
+                    </div>
+
+                    {/* En-tête officiel */}
+                    <div className="text-center space-y-1 border-b pb-4 border-[#c9a84c]/40 relative z-10">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="h-px w-10 bg-[#c9a84c]"></span>
+                        <Award className="w-5 h-5 text-[#c9a84c]" />
+                        <span className="h-px w-10 bg-[#c9a84c]"></span>
+                      </div>
+                      <h2 className="font-serif text-lg sm:text-xl font-black uppercase tracking-[0.2em] text-[#c9a84c]">
+                        Certificat d'Authenticité
+                      </h2>
+                      <p className="text-[10px] font-mono tracking-widest uppercase opacity-75">
+                        Création Artistique Originale • Décret n° 81-255 du 3 mars 1981
+                      </p>
+                      <p className="text-[11px] font-mono font-bold text-emerald-500 pt-0.5">
+                        N° D'ENREGISTREMENT : {certificateNumber}
+                      </p>
+                    </div>
+
+                    {/* Visuel de l'Œuvre & Détails Clés */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center relative z-10">
+                      
+                      {/* Vignette de l'Œuvre */}
+                      <div className="sm:col-span-4 flex justify-center">
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 border-2 border-[#c9a84c] p-1 bg-black/20 shadow-inner flex items-center justify-center overflow-hidden">
+                          {activeArtworkImage ? (
+                            <img 
+                              src={activeArtworkImage} 
+                              alt={artworkTitle} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Palette className="w-12 h-12 text-[#c9a84c]/60" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Métadonnées Spécifiques */}
+                      <div className="sm:col-span-8 space-y-1.5 text-xs font-serif">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase opacity-60 block font-sans">Titre de l'Œuvre</span>
+                          <strong className="text-base sm:text-lg text-[#c9a84c] font-black italic">« {artworkTitle} »</strong>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div>
+                            <span className="text-[9px] font-mono uppercase opacity-60 block font-sans">Artiste</span>
+                            <span className="font-bold">{artistName}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-mono uppercase opacity-60 block font-sans">Année de création</span>
+                            <span className="font-bold">{artworkYear}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div>
+                            <span className="text-[9px] font-mono uppercase opacity-60 block font-sans">Technique / Médium</span>
+                            <span className="font-bold">{artworkMedium}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-mono uppercase opacity-60 block font-sans">Dimensions</span>
+                            <span className="font-bold">{artworkDimensions}</span>
+                          </div>
+                        </div>
+                        <div className="pt-1">
+                          <span className="text-[9px] font-mono uppercase opacity-60 block font-sans">Spécificité</span>
+                          <span className="font-bold text-emerald-400">Exemplaire Original Unique (1/1) • Signé de la main de l'artiste</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Déclaration Solennelle d'Authenticité Décret Marcus */}
+                    <div className={`p-3.5 border text-[10px] sm:text-[11px] leading-relaxed italic relative z-10 ${
+                      isDark ? "bg-black/60 border-white/10 text-neutral-300" : "bg-white/80 border-stone-200 text-stone-800"
+                    }`}>
+                      « Je soussigné(e), <strong>{artistName}</strong>, certifie que l'œuvre désignée ci-dessus est une création originale réalisée intégralement de ma main selon les règles de l'art, et constitue un exemplaire unique et original, conformément aux dispositions du <strong>Décret n° 81-255 du 3 mars 1981</strong> relatif à la répression des fraudes en matière de transactions d'œuvres d'art et d'objets de collection. »
+                    </div>
+
+                    {/* QR Code de Sécurité & Signatures Officielles */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end pt-2 border-t border-[#c9a84c]/30 relative z-10">
+                      
+                      {/* QR Code de Sécurité Infalsifiable */}
+                      <div className="sm:col-span-4 flex flex-col items-center text-center space-y-1">
+                        <div className="p-2 bg-white border border-[#c9a84c] shadow-sm">
+                          <QRCodeSVG 
+                            value={`${window.location.origin}${window.location.pathname}?verify=${certificateNumber}&title=${encodeURIComponent(artworkTitle)}&artist=${encodeURIComponent(artistName)}`}
+                            size={72}
+                            level="M"
+                          />
+                        </div>
+                        <span className="text-[8px] font-mono uppercase opacity-75 leading-tight">
+                          Preuve Numérique & Traçabilité Clé {certificateNumber.slice(-6)}
+                        </span>
+                      </div>
+
+                      {/* Signature Artiste */}
+                      <div className="sm:col-span-4 text-center space-y-4">
+                        <span className="text-[9px] font-mono uppercase opacity-60 block">Signature de l'Artiste</span>
+                        <div className="h-10 border-b border-dashed border-[#c9a84c]/60 flex items-center justify-center italic text-[#c9a84c] font-serif text-sm">
+                          {artistName}
+                        </div>
+                        <span className="text-[8px] opacity-60 font-mono">Fait à l'Atelier le {contractDate}</span>
+                      </div>
+
+                      {/* Cachet Galerie */}
+                      <div className="sm:col-span-4 text-center space-y-4">
+                        <span className="text-[9px] font-mono uppercase opacity-60 block">Visa & Cachet Galerie</span>
+                        <div className="h-10 border-b border-dashed border-[#c9a84c]/60 flex items-center justify-center font-bold text-xs uppercase opacity-80">
+                          {galleryName}
+                        </div>
+                        <span className="text-[8px] opacity-60 font-mono">Enregistré au registre de vente</span>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {/* Bouton d'impression du Certificat */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] opacity-60 font-mono">
+                      Conseil : Imprimer sur papier vergé ou papier coton 300g
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.print();
+                      }}
+                      className="py-2.5 px-5 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>Imprimer le Certificat COA (Papier d'Art)</span>
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: LES 50 LEVIERS TRIPARTITES */}
           {activeTab === "fifty_ideas" && (
             <div className="space-y-5 animate-fadeIn">
               

@@ -14,6 +14,7 @@ export interface ArtistProfile {
   mediums: string;
   achievements: string;
   philosophy: string;
+  phone?: string;
 }
 
 export interface Tool {

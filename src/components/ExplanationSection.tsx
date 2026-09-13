@@ -17,7 +17,18 @@ import {
   Briefcase, 
   Radio, 
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Award,
+  Share2,
+  BookOpen,
+  Crown,
+  Printer,
+  ShieldCheck,
+  Zap,
+  Layers,
+  Info,
+  QrCode,
+  Globe
 } from "lucide-react";
 
 interface ExplanationSectionProps {
@@ -28,7 +39,12 @@ interface ExplanationSectionProps {
   onOpenCollectorSales?: () => void;
   onOpenPressSocial?: () => void;
   onOpenProfileModal?: () => void;
-  onOpenQrSalesModal?: () => void;
+  onOpenQrSalesModal?: (tab?: any) => void;
+  onOpenGlobalReport?: () => void;
+  onOpenShareModal?: () => void;
+  onOpenHubModal?: () => void;
+  onOpenSubscriptionModal?: () => void;
+  onOpenHistory?: () => void;
 }
 
 export default function ExplanationSection({
@@ -40,18 +56,31 @@ export default function ExplanationSection({
   onOpenPressSocial,
   onOpenProfileModal,
   onOpenQrSalesModal,
+  onOpenGlobalReport,
+  onOpenShareModal,
+  onOpenHubModal,
+  onOpenSubscriptionModal,
+  onOpenHistory,
 }: ExplanationSectionProps) {
-  // Masqué par défaut comme demandé par l'utilisateur
+  // Masqué par défaut sur la page d'accueil (cliquable pour dérouler toute la richesse de l'application)
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const isDark = theme === "dark-gold";
 
   return (
-    <section className="w-full max-w-4xl mx-auto my-6 sm:my-8 transition-all duration-300">
-      {/* Barre Principale Pliante : Écrit en GROS "EXPLICATION" avec une grande flèche */}
+    <section 
+      id="homepage-explanation-guide" 
+      aria-label="Guide complet et explications de l'application"
+      className="w-full max-w-5xl mx-auto my-6 sm:my-8 transition-all duration-300"
+    >
+      {/* 
+        BANNIÈRE PRINCIPALE PLIANTE (PAGE D'ACCUEIL)
+        Masquée par défaut, mise en valeur avec typographie dorée soignée, badges et flèche interactive 
+      */}
       <div
         role="button"
         tabIndex={0}
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -59,13 +88,13 @@ export default function ExplanationSection({
             setIsOpen(!isOpen);
           }
         }}
-        className={`w-full p-4 sm:p-6 border-2 transition-all duration-300 cursor-pointer select-none flex items-center justify-between gap-4 group rounded-none shadow-md ${
+        className={`w-full p-4 sm:p-6 border-2 transition-all duration-300 cursor-pointer select-none flex items-center justify-between gap-4 group rounded-none shadow-lg ${
           isDark
             ? isOpen
-              ? "bg-[#14120a] border-[#c9a84c] text-white"
-              : "bg-[#0f0f0f] border-[#c9a84c]/60 hover:border-[#c9a84c] hover:bg-[#16140d] text-neutral-200"
+              ? "bg-[#14120a] border-[#c9a84c] text-white shadow-[#c9a84c]/10"
+              : "bg-[#0d0d0c] border-[#c9a84c]/60 hover:border-[#c9a84c] hover:bg-[#16140e] text-neutral-200"
             : isOpen
-              ? "bg-amber-50/90 border-[#c9a84c] text-stone-900"
+              ? "bg-amber-50/95 border-[#c9a84c] text-stone-900 shadow-amber-900/10"
               : "bg-white border-stone-300 hover:border-[#c9a84c] hover:bg-stone-50 text-stone-900"
         }`}
       >
@@ -80,30 +109,33 @@ export default function ExplanationSection({
 
           <div className="min-w-0 text-left">
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* ÉCRIT EN GROS EXPLICATION */}
+              {/* Titre écrit en grand et valorisé */}
               <h2 className="font-serif font-black text-2xl sm:text-3xl md:text-4xl tracking-wider uppercase leading-none">
                 EXPLICATION
               </h2>
               <span className="text-[10px] font-mono font-bold tracking-widest px-2.5 py-1 uppercase bg-[#c9a84c] text-black">
-                GUIDE DÉBUTANT
+                GUIDE COMPLET DE L'APPLICATION
+              </span>
+              <span className="text-[10px] font-mono font-bold tracking-widest px-2 py-0.5 border border-[#c9a84c]/60 text-[#c9a84c] hidden sm:inline-block">
+                5 PÔLES · 36 OUTILS IA
               </span>
             </div>
-            <p className={`text-xs sm:text-sm font-sans mt-1.5 line-clamp-1 sm:line-clamp-none ${
-              isDark ? "text-neutral-400" : "text-stone-600"
+            <p className={`text-xs sm:text-sm font-sans mt-2 ${
+              isDark ? "text-neutral-300" : "text-stone-600"
             }`}>
               {isOpen 
-                ? "Cliquez sur la flèche pour refermer le guide d'utilisation" 
-                : "Comment fonctionne l'application ? Tout savoir en 3 étapes simples (cliquez pour dérouler)"}
+                ? "Cliquez pour refermer le guide d'explications de l'application" 
+                : "Découvrez toutes les possibilités : Analyse d'œuvres, cartels muraux, certificats d'authenticité, cotation financière, dossiers galeries & vernissages."}
             </p>
           </div>
         </div>
 
-        {/* GRANDE FLÈCHE INTERACTIVE */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs font-mono font-bold hidden md:inline text-[#c9a84c]">
-            {isOpen ? "Masquer" : "Regarder l'explication"}
+        {/* GRANDE FLÈCHE INTERACTIVE & BOUTON D'ACTION */}
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          <span className="text-xs font-mono font-bold hidden md:inline text-[#c9a84c] uppercase tracking-wider">
+            {isOpen ? "Masquer ▲" : "Ouvrir le guide ▼"}
           </span>
-          <div className={`w-10 h-10 sm:w-12 sm:h-12 border flex items-center justify-center transition-transform duration-300 ${
+          <div className={`w-11 h-11 sm:w-13 sm:h-13 border flex items-center justify-center transition-transform duration-300 ${
             isDark ? "border-[#c9a84c]/60 bg-black group-hover:border-[#c9a84c]" : "border-stone-300 bg-white group-hover:border-[#c9a84c]"
           }`}>
             {isOpen ? (
@@ -115,26 +147,32 @@ export default function ExplanationSection({
         </div>
       </div>
 
-      {/* CONTENU DE L'EXPLICATION DÉPLIÉE */}
+      {/* CONTENU DE L'EXPLICATION DÉPLIÉE (TOUTES LES POSSIBILITÉS DÉTAILLÉES) */}
       {isOpen && (
-        <div className={`border-2 border-t-0 p-5 sm:p-8 space-y-8 animate-fadeIn ${
-          isDark ? "bg-[#0a0a0a] border-[#c9a84c] text-white" : "bg-white border-[#c9a84c] text-stone-900 shadow-xl"
+        <div className={`border-2 border-t-0 p-5 sm:p-8 space-y-8 animate-fadeIn shadow-2xl ${
+          isDark ? "bg-[#0a0a0a] border-[#c9a84c] text-white" : "bg-white border-[#c9a84c] text-stone-900"
         }`}>
-          {/* Bloc 1 : En quelques mots */}
+          
+          {/* Bloc 1 : Présentation Générale */}
           <div className={`p-4 sm:p-6 border ${
-            isDark ? "bg-[#14120c] border-[#c9a84c]/40" : "bg-amber-50/70 border-[#c9a84c]/40"
+            isDark ? "bg-[#14120c] border-[#c9a84c]/40" : "bg-amber-50/80 border-[#c9a84c]/50"
           }`}>
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#c9a84c]">
-              EN QUELQUES MOTS
-            </span>
-            <h3 className="font-serif font-bold text-lg sm:text-xl mt-1 mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#c9a84c]">
+                EN QUELQUES MOTS
+              </span>
+              <span className="text-[10px] font-mono opacity-70">
+                Propulsé par Google Gemini Pro Vision
+              </span>
+            </div>
+            <h3 className="font-serif font-bold text-lg sm:text-xl md:text-2xl mb-2">
               L'Œil de l'Atelier : Votre Assistant d'Art Augmenté
             </h3>
             <p className={`text-xs sm:text-sm leading-relaxed font-sans ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
-              Cette application a été conçue pour les <strong>artistes peintres, sculpteurs, photographes, illustrateurs et galeristes</strong>. 
-              Elle met à votre service la puissance de l'Intelligence Artificielle de Google (Gemini) pour analyser vos œuvres en profondeur, 
-              rédiger vos textes de médiation culturelle, certifier l'authenticité de vos toiles, calculer une cote financière réaliste 
-              et préparer vos candidatures auprès des galeries d'art.
+              Cette application a été spécialement conçue pour les <strong>artistes peintres, sculpteurs, photographes, illustrateurs et galeristes</strong>. 
+              Elle met à votre disposition l'Intelligence Artificielle visuelle la plus avancée de Google pour analyser vos œuvres en profondeur, 
+              rédiger vos textes critiques et de médiation culturelle, certifier l'authenticité de vos créations, estimer une cote financière réaliste, 
+              imprimer vos cartels muraux d'exposition avec QR codes de vente directe, et préparer vos dossiers pour les galeries.
             </p>
           </div>
 
@@ -142,7 +180,7 @@ export default function ExplanationSection({
           <div>
             <div className="mb-4">
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#c9a84c]">
-                MODE D'EMPLOI PAS À PAS
+                PRISE EN MAIN IMMÉDIATE
               </span>
               <h3 className="font-serif font-bold text-base sm:text-lg uppercase tracking-wide">
                 Comment l'utiliser en 3 étapes simples :
@@ -152,7 +190,7 @@ export default function ExplanationSection({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Étape 1 */}
               <div className={`p-4 sm:p-5 border flex flex-col justify-between ${
-                isDark ? "bg-black/50 border-white/10" : "bg-stone-50 border-stone-200"
+                isDark ? "bg-[#111111] border-white/10" : "bg-stone-50 border-stone-200 shadow-sm"
               }`}>
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -168,13 +206,13 @@ export default function ExplanationSection({
                   </p>
                 </div>
                 <p className="text-[10px] font-mono text-[#c9a84c] mt-3 font-semibold">
-                  ✓ Formats : JPEG, PNG, WEBP
+                  ✓ JPEG, PNG, WEBP · Traitement sécurisé
                 </p>
               </div>
 
               {/* Étape 2 */}
               <div className={`p-4 sm:p-5 border flex flex-col justify-between ${
-                isDark ? "bg-black/50 border-white/10" : "bg-stone-50 border-stone-200"
+                isDark ? "bg-[#111111] border-white/10" : "bg-stone-50 border-stone-200 shadow-sm"
               }`}>
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -196,7 +234,7 @@ export default function ExplanationSection({
 
               {/* Étape 3 */}
               <div className={`p-4 sm:p-5 border flex flex-col justify-between ${
-                isDark ? "bg-black/50 border-white/10" : "bg-stone-50 border-stone-200"
+                isDark ? "bg-[#111111] border-white/10" : "bg-stone-50 border-stone-200 shadow-sm"
               }`}>
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -218,7 +256,7 @@ export default function ExplanationSection({
             </div>
           </div>
 
-          {/* Bloc 3 : Les 5 Pôles & Passerelles Métiers (36 Outils au total) */}
+          {/* Bloc 3 : Les 5 Pôles Stratégiques & 36 Outils d'Excellence */}
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b pb-2 border-[#c9a84c]/20">
               <div>
@@ -226,19 +264,26 @@ export default function ExplanationSection({
                   ÉCOSYSTÈME COMPLET
                 </span>
                 <h3 className="font-serif font-bold text-base sm:text-lg uppercase tracking-wide">
-                  Les 5 Passerelles Métiers (36 Outils d'Excellence)
+                  Les 5 Pôles Métiers & 36 Outils Disponibles
                 </h3>
               </div>
-              <span className="text-[11px] font-mono opacity-60">
-                Disponibles à tout moment dans le menu ou ci-dessous
-              </span>
+              {onOpenHubModal && (
+                <button
+                  type="button"
+                  onClick={onOpenHubModal}
+                  className="text-xs font-mono font-bold text-[#c9a84c] hover:underline flex items-center gap-1 self-start sm:self-auto"
+                >
+                  <span>Explorer le Hub Stratégique (5 Pôles)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Passerelle Cartels Muraux & QR Vente */}
             {onOpenQrSalesModal && (
               <div 
-                onClick={onOpenQrSalesModal}
-                className={`p-4 border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all hover:border-[#c9a84c] shadow-md ${
+                onClick={() => onOpenQrSalesModal("generator")}
+                className={`p-4 border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-all hover:border-[#c9a84c] shadow-md mb-3 ${
                   isDark ? "bg-gradient-to-r from-[#17140b] via-[#211b0e] to-[#121008] border-[#c9a84c]/80 text-white" : "bg-gradient-to-r from-amber-100 via-amber-50 to-white border-[#c9a84c] text-black"
                 }`}
               >
@@ -256,20 +301,25 @@ export default function ExplanationSection({
                       </span>
                     </div>
                     <p className={`text-xs font-sans mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
-                      Impression de cartels muraux normalisés avec QR codes, audioguide vocal immersif pour les visiteurs et passerelle de vente directe discrète.
+                      Impression de cartels muraux normalisés avec QR codes, audioguide vocal immersif pour les visiteurs, livre d'or d'exposition et passerelle de vente directe discrète.
                     </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  className="px-4 py-2 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider transition-colors flex-shrink-0 self-end sm:self-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenQrSalesModal("generator");
+                  }}
+                  className="px-4 py-2 bg-[#c9a84c] hover:bg-white text-black font-mono font-bold text-xs uppercase tracking-wider transition-colors flex-shrink-0 self-end sm:self-center cursor-pointer shadow"
                 >
                   Générer Cartel & QR →
                 </button>
               </div>
             )}
 
+            {/* Grille des 5 Pôles */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {/* Outils d'Atelier */}
               <div 
@@ -282,7 +332,7 @@ export default function ExplanationSection({
                   <div className="text-xl mb-1.5">🎨</div>
                   <h5 className="font-serif font-bold text-xs uppercase text-[#c9a84c]">16 Outils d'Atelier</h5>
                   <p className="text-[11px] font-sans opacity-80 mt-1 leading-snug">
-                    Style, palette, cotation financière, certificat COA, cartel, poésie & critique.
+                    Style, palette chromatique, cotation financière, certificat COA, cartel, poésie & critique.
                   </p>
                 </div>
                 <span className="text-[10px] font-mono font-bold text-[#c9a84c] mt-2 flex items-center gap-1">
@@ -368,7 +418,46 @@ export default function ExplanationSection({
             </div>
           </div>
 
-          {/* Bloc 4 : Personnalisation facultative & bouton refermer */}
+          {/* Bloc 4 : Fonctions d'Export, Partage & Personnalisation */}
+          <div className={`p-4 border ${
+            isDark ? "bg-[#12110c] border-[#c9a84c]/30" : "bg-amber-50/50 border-stone-200"
+          }`}>
+            <h4 className="font-serif font-bold text-xs sm:text-sm uppercase tracking-wider text-[#c9a84c] mb-2.5">
+              Outils Pratiques & Gestion d'Atelier
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+              <div className="flex items-start gap-2">
+                <BookOpen className="w-4 h-4 text-[#c9a84c] flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-sans">Carnet de Bord</strong>
+                  <span className="text-[11px] opacity-75">Historique complet de toutes vos analyses sauvegardées localement.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Printer className="w-4 h-4 text-[#c9a84c] flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-sans">Cartels & COA Imprimables</strong>
+                  <span className="text-[11px] opacity-75">Impression haute fidélité avec QR codes de vente et QR d'audioguide.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Share2 className="w-4 h-4 text-[#c9a84c] flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-sans">Partage Artiste / Acheteur</strong>
+                  <span className="text-[11px] opacity-75">Liens directs dédiés pour les visiteurs d'exposition ou les acheteurs.</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#c9a84c] flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-sans">Sécurité & Confidentialité</strong>
+                  <span className="text-[11px] opacity-75">Vos visuels restent votre propriété intellectuelle exclusive.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bloc 5 : Personnalisation facultative & bouton refermer */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-[#c9a84c]/20">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
@@ -382,18 +471,27 @@ export default function ExplanationSection({
                 <button
                   type="button"
                   onClick={onOpenProfileModal}
-                  className="px-3 py-1.5 border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black font-bold uppercase tracking-wider text-[10px] transition-colors"
+                  className="px-3 py-1.5 border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black font-bold uppercase tracking-wider text-[10px] transition-colors cursor-pointer"
                 >
                   Configurer mon profil
+                </button>
+              )}
+              {onOpenHistory && (
+                <button
+                  type="button"
+                  onClick={onOpenHistory}
+                  className="px-3 py-1.5 border border-white/20 hover:border-[#c9a84c] text-neutral-300 hover:text-white font-bold uppercase tracking-wider text-[10px] transition-colors cursor-pointer"
+                >
+                  Carnet de bord
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="px-3.5 py-1.5 bg-[#c9a84c] text-black hover:bg-white font-bold uppercase tracking-wider text-[10px] transition-colors flex items-center gap-1"
+                className="px-4 py-2 bg-[#c9a84c] text-black hover:bg-white font-bold uppercase tracking-wider text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow"
               >
-                <ChevronUp className="w-3.5 h-3.5" />
-                Refermer l'explication
+                <ChevronUp className="w-4 h-4" />
+                Masquer l'explication ▲
               </button>
             </div>
           </div>
