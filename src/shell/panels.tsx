@@ -290,12 +290,31 @@ function PanneauGratuit({ app, config, apps, hubUrl, ouvrir, basculer }: Panneau
   );
 }
 
+/**
+ * Un bouton « payer » n'est montré que s'il mène à un vrai lien de paiement.
+ * Les adresses d'exemple (« …/alphabette_app_15 ») ou vides n'en sont pas :
+ * tant que le hub n'en publie pas de vraies, on dit que le paiement n'est pas ouvert.
+ */
+export function paiementOuvert(lien: string | undefined): boolean {
+  return Boolean(lien) && /^https:\/\/buy\.stripe\.com\/[A-Za-z0-9]+$/.test(lien as string) && !/alphabette/i.test(lien as string);
+}
+
 function PanneauPass(props: PanneauProps) {
   if (props.app.gratuit) return <PanneauGratuit {...props} />;
-  const { app, config, ouvrir, basculer } = props;
-  const promo = config.promotion;
+  const { config, ouvrir, basculer } = props;
+  const ouvert = paiementOuvert(config.paymentLinks.perApp) && paiementOuvert(config.paymentLinks.ecosystem);
+  const promo = ouvert ? config.promotion : undefined;
   return (
     <>
+      {!ouvert && (
+        <div className="ab-panneau">
+          <h4>Le paiement en ligne n’est pas encore ouvert</h4>
+          <p>
+            Aujourd’hui, les applications s’utilisent librement. Voici les tarifs prévus pour le Pass. D’ici là, tu
+            peux soutenir le projet par un don.
+          </p>
+        </div>
+      )}
       {promo && (
         <div className="ab-promo">
           <IconStar width={16} height={16} />
@@ -314,56 +333,57 @@ function PanneauPass(props: PanneauProps) {
             {euros(config.perAppPerYear)} <small>/ an</small>
           </span>
           <ul>
-            <li>L’application de ton choix, débloquée à vie de l’abonnement</li>
-            <li>Clé IA Mistral managée incluse</li>
+            <li>L’application de ton choix</li>
             <li>{config.trialDays} jours d’essai avant de payer</li>
           </ul>
-          <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => ouvrir(config.paymentLinks.perApp)}>
-            Débloquer une application
-          </button>
+          {ouvert && (
+            <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => ouvrir(config.paymentLinks.perApp)}>
+              Débloquer une application
+            </button>
+          )}
         </div>
 
         <div className="ab-offre ab-offre--vedette">
-          <span className="ab-etiquette ab-etiquette--pass">Le plus choisi</span>
+          <span className="ab-etiquette ab-etiquette--pass">Tout compris</span>
           <span className="ab-offre__prix">
             {euros(config.ecosystemPerYear)} <small>/ an</small>
           </span>
           <ul>
             <li><strong>Tout l’écosystème</strong>, applications présentes et futures</li>
-            <li>Clé IA Mistral managée incluse</li>
-            <li>{config.trialDays} jours d’essai, sans carte bancaire</li>
+            <li>{config.trialDays} jours d’essai avant de payer</li>
           </ul>
-          <button
-            type="button"
-            className="ab-btn ab-btn--pass ab-btn--lg"
-            onClick={() => ouvrir(config.paymentLinks.ecosystem)}
-          >
-            <IconStar width={14} height={14} /> Prendre le Pass {euros(config.ecosystemPerYear)}/an
-          </button>
+          {ouvert && (
+            <button
+              type="button"
+              className="ab-btn ab-btn--pass ab-btn--lg"
+              onClick={() => ouvrir(config.paymentLinks.ecosystem)}
+            >
+              <IconStar width={14} height={14} /> Prendre le Pass {euros(config.ecosystemPerYear)}/an
+            </button>
+          )}
         </div>
       </div>
 
       <div className="ab-panneau">
-        <h4>Ce qui est inclus</h4>
+        <h4>Ce que finance le Pass</h4>
         <p className="ab-note">
-          {app.counter?.total ?? 16} applications, l’IA souveraine Mistral AI, l’hébergement en France, les sauvegardes
-          et les évolutions. Pas de publicité, pas de revente de données, résiliable en un clic.
+          Les applications, leur hébergement et leurs évolutions, y compris celles qui restent gratuites. Pas de
+          publicité, pas de revente de données.
         </p>
       </div>
 
       <div className="ab-actions-ligne">
-        <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => basculer('compte')}>
-          👤 Mon compte
-        </button>
+        {!ouvert && (
+          <button type="button" className="ab-btn ab-btn--don ab-btn--lg" onClick={() => basculer('dons')}>
+            ♥ Faire un don
+          </button>
+        )}
         <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => basculer('sites')}>
           🧭 Voir les applications
         </button>
       </div>
 
-      <p className="ab-note">
-        Paiement sécurisé par Stripe. Les prix et les liens affichés viennent du hub (
-        <code>{'/api/config.json'}</code>) : ils se mettent à jour tout seuls.
-      </p>
+      {ouvert && <p className="ab-note">Paiement sécurisé par Stripe.</p>}
     </>
   );
 }

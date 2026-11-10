@@ -21,10 +21,12 @@ export const PRICING = {
 } as const;
 
 /** Liens de paiement par défaut (remplacés par ceux du hub si disponibles). */
-export const DEFAULT_PAYMENT_LINKS = {
-  perApp: 'https://buy.stripe.com/alphabette_app_15',
-  ecosystem: 'https://buy.stripe.com/alphabette_ecosystem_40',
-} as const;
+export const DEFAULT_PAYMENT_LINKS: { perApp: string; ecosystem: string } = {
+  // Vides tant que le hub ne publie pas de vrais liens : la base affiche alors
+  // « le paiement en ligne n'est pas encore ouvert » au lieu d'un bouton.
+  perApp: '',
+  ecosystem: '',
+};
 
 /** Hub central : source de vérité des tarifs et des liens de paiement. */
 export const HUB_URL = 'https://alphabette.fr';
