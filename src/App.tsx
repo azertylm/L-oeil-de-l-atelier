@@ -2395,7 +2395,7 @@ export default function App() {
         activeArtworkTitle={selectedArtwork?.title || saveTitle || (activeSeries.length > 0 ? activeSeries[0].title : "Œuvre d'Atelier")}
         activeArtworkMedium={selectedArtwork?.medium || saveMedium || profile.style || "Technique Mixte"}
         activeArtworkYear={selectedArtwork?.year || saveYear || new Date().getFullYear().toString()}
-        activeArtworkDimensions={(selectedArtwork && 'dimensions' in selectedArtwork) ? selectedArtwork.dimensions : undefined}
+        activeArtworkDimensions={(selectedArtwork && 'dimensions' in selectedArtwork) ? String(selectedArtwork.dimensions ?? '') || undefined : undefined}
         activeSeries={activeSeries}
         cache={cache}
         onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
@@ -2436,7 +2436,7 @@ export default function App() {
           artist: profile.name || selectedArtwork?.artist || saveArtist || "Artiste",
           medium: selectedArtwork?.medium || saveMedium || profile.style || "Technique Mixte",
           year: selectedArtwork?.year || saveYear || new Date().getFullYear().toString(),
-          dimensions: (selectedArtwork && 'dimensions' in selectedArtwork) ? selectedArtwork.dimensions : undefined,
+          dimensions: (selectedArtwork && 'dimensions' in selectedArtwork) ? String(selectedArtwork.dimensions ?? '') || undefined : undefined,
           imageSrc: imageBase64 || previewUrl || undefined
         }}
         activeSeries={activeSeries}

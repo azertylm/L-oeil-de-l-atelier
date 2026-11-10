@@ -8,6 +8,9 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
+        // Base commune Alphabette (double barre, BIG) : copie embarquée dans src/shell.
+        '@alphabette/shell/style.css': path.resolve(__dirname, 'src/shell/shell.css'),
+        '@alphabette/shell': path.resolve(__dirname, 'src/shell/index.ts'),
         '@': path.resolve(__dirname, '.'),
       },
     },

@@ -16,6 +16,12 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "paths": {
+      "@alphabette/shell": [
+        "./src/shell/index.ts"
+      ],
+      "@alphabette/shell/style.css": [
+        "./src/shell/shell.css"
+      ],
       "@/*": [
         "./*"
       ]
