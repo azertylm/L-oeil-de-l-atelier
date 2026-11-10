@@ -48,30 +48,8 @@ export default function VernissageEventModal({
   const [guestCount, setGuestCount] = useState<number>(45);
   const [cocktailType, setCocktailType] = useState<"standard" | "prestige" | "eco">("prestige");
 
-  // Guestbook simulated comments state
-  const [guestComments, setGuestComments] = useState<Array<{ name: string; role: string; message: string; date: string; intention?: string }>>([
-    {
-      name: "Claire & Marc de Valmont",
-      role: "Collectionneurs privés",
-      message: "Un travail magistral sur la lumière et la densité de la matière ! Nous avons eu un immense coup de cœur pour la grande toile centrale.",
-      date: "Ce soir à 19h12",
-      intention: "Option d'achat confirmée"
-    },
-    {
-      name: "Julien Renoir",
-      role: "Architecte d'intérieur (Studio R&A)",
-      message: "Les harmonies chromatiques sont d'une élégance rare. Je souhaiterais intégrer deux pièces dans un projet de penthouse dans le Marais.",
-      date: "Ce soir à 19h45",
-      intention: "Demande de catalogue pro"
-    },
-    {
-      name: "Sophie Lambert",
-      role: "Critique d'art & Curatrice",
-      message: "Une démarche qui gagne en maturité d'exposition en exposition. La vibration des pigments est saisissante.",
-      date: "Ce soir à 20h10",
-      intention: "Coup de cœur artistique"
-    }
-  ]);
+  // Livre d'or : démarre vide (plus de faux visiteurs ni de fausses options d'achat)
+  const [guestComments, setGuestComments] = useState<Array<{ name: string; role: string; message: string; date: string; intention?: string }>>([]);
   const [newCommentName, setNewCommentName] = useState<string>("");
   const [newCommentRole, setNewCommentRole] = useState<string>("Visiteur passionné");
   const [newCommentText, setNewCommentText] = useState<string>("");
@@ -266,6 +244,17 @@ export default function VernissageEventModal({
         </div>
 
         {/* 5 Vernissage Tabs Navigation */}
+        {Object.keys(liveResults).length === 0 ? (
+          <div className="px-4 py-2 text-xs font-sans font-semibold bg-amber-400 text-black">
+            EXEMPLE — Ces textes sont des modèles généraux : ils n'ont pas été calculés pour vos œuvres.
+            Lancez une analyse (clé Gemini dans le Profil Artiste) pour obtenir une proposition personnalisée.
+          </div>
+        ) : (
+          <div className="px-4 py-2 text-xs font-sans bg-amber-100 text-black">
+            Textes proposés par une IA (ou modèles d'exemple pour les parties non analysées) : relisez et vérifiez
+            chaque nom, chiffre et règle avant de vous en servir.
+          </div>
+        )}
         <div className={`flex border-b overflow-x-auto scrollbar-thin ${
           isDark ? "bg-black border-[#c9a84c]/20" : "bg-stone-100 border-stone-300"
         }`}>
@@ -695,10 +684,10 @@ export default function VernissageEventModal({
               }`}>
                 <div>
                   <h3 className="font-serif font-bold text-sm sm:text-base text-[#c9a84c]">
-                    Livre d'Or Connecté & Mur des Offres Directes
+                    Livre d'Or du Vernissage (sur cet appareil)
                   </h3>
                   <p className={`text-xs font-sans mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-800"}`}>
-                    Les visiteurs et collectionneurs peuvent laisser un mot doux d'admiration ou formuler une proposition d'acquisition discrète.
+                    Carnet à tenir sur votre tablette ou votre téléphone pendant le vernissage : les messages restent sur cet appareil, rien n'est envoyé par Internet.
                   </p>
                 </div>
 
@@ -791,7 +780,7 @@ export default function VernissageEventModal({
                 }`}>
                   <h4 className="font-mono text-xs font-bold uppercase text-[#c9a84c] mb-2 flex items-center justify-between">
                     <span>Messages des Visiteurs ({guestComments.length})</span>
-                    <span className="text-[10px] font-normal text-neutral-400">Mis à jour en direct</span>
+                    <span className="text-[10px] font-normal text-neutral-400">Notés sur cet appareil</span>
                   </h4>
 
                   {guestComments.map((entry, idx) => (

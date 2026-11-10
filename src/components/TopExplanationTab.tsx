@@ -210,7 +210,7 @@ export default function TopExplanationTab({
     {
       category: "vente",
       title: "Défiscalisation Entreprises (Art. 238 bis AB)",
-      desc: "Simulateur d'amortissement fiscal sur 5 ans pour inciter les entreprises, professions libérales et mécènes à acheter vos toiles.",
+      desc: "Simulateur d'amortissement fiscal sur 5 ans pour présenter aux entreprises la déduction possible quand elles achètent vos toiles (professions libérales en BNC exclues).",
       actionLabel: "Simuler la déduction",
       onClick: onOpenCollectorSales,
       badge: "Art. 238 bis",

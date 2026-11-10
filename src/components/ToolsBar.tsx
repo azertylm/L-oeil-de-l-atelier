@@ -146,7 +146,7 @@ export default function ToolsBar({
                   ? "bg-[#c9a84c] text-black border-[#c9a84c] font-black" 
                   : "bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30"
               }`}>
-                {isSubscribed ? "PRO ACTIVÉ" : "OFFRE ABONNEMENT"}
+                {isSubscribed ? "INCLUS" : "OFFRE ABONNEMENT"}
               </span>
               <span className={`text-xs font-serif font-bold ${isDark ? "text-white" : "text-stone-900"}`}>
                 Diagnostic Intégral de l'Œuvre (16/16)
@@ -156,7 +156,7 @@ export default function ToolsBar({
             <p className={`text-[11px] font-sans ${isDark ? "text-neutral-400" : "text-stone-600"}`}>
               {isSubscribed 
                 ? `${completedCount}/16 analyses effectuées pour cette œuvre.`
-                : "Lancez toutes les recherches en une seule fois (Compris dans l'abonnement à 3 €/mois ou 20 €/an)."
+                : "Lancez toutes les recherches en une seule fois."
               }
             </p>
           </div>

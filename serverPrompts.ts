@@ -584,7 +584,7 @@ export const PROMPTS_CONFIG: Record<string, PromptConfig> = {
       type: Type.OBJECT,
       properties: {
         titre_accroche: { type: Type.STRING, description: "Slogan fiscal percutant (ex: 'Acquérez une œuvre originale et déduisez 100% du prix d'achat de votre résultat imposable sur 5 ans')." },
-        mecanisme_art_238bis: { type: Type.STRING, description: "Explication claire du mécanisme de déduction fiscale pour les sociétés (IS / IR / BNC / BIC)." },
+        mecanisme_art_238bis: { type: Type.STRING, description: "Explication claire du mécanisme de déduction pour les entreprises à l'IS ou à l'IR en BIC (les BNC / professions libérales sont exclus), avec le plafond annuel (20 000 € ou 0,5 % du CA), l'échéance du 31 décembre 2028 et le rappel de faire valider par un expert-comptable." },
         exemple_chiffre: {
           type: Type.OBJECT,
           properties: {
@@ -606,14 +606,14 @@ export const PROMPTS_CONFIG: Record<string, PromptConfig> = {
     }
   },
   sales_invoice_certificate: {
-    prompt: "Tu es un juriste spécialisé dans le marché de l'art et la Maison des Artistes / AGESSA / URSSAF Limiteur. Génère les mentions légales obligatoires, la structure de facture d'artiste-auteur et le bordereau de vente officiel conforme.",
+    prompt: "Tu es un juriste spécialisé dans le marché de l'art et la Maison des Artistes / AGESSA / Urssaf Limousin. Génère les mentions légales obligatoires, la structure de facture d'artiste-auteur et le bordereau de vente officiel conforme.",
     schema: {
       type: Type.OBJECT,
       properties: {
         mentions_legales_obligatoires: {
           type: Type.ARRAY,
           items: { type: Type.STRING },
-          description: "Mentions impératives (SIRET, Numéro d'ordre de facture, Régime TVA art. 293 B ou TVA 5.5% sur œuvres originales, Déclaration URSSAF Limiteur)."
+          description: "Mentions impératives (SIRET, Numéro d'ordre de facture, Régime TVA art. 293 B ou TVA 5.5% sur œuvres originales, Déclaration Urssaf Limousin)."
         },
         conditions_generales_vente: { type: Type.STRING, description: "Extrait de CGV spécial art (clause de réserve de propriété jusqu'à complet paiement, transfert des droits de reproduction/propriété matérielle)." },
         certificat_conforme_decret_marcus: { type: Type.STRING, description: "Texte de certification d'authenticité conforme au décret Marcus n° 81-255 du 3 mars 1981." },

@@ -151,7 +151,8 @@ export default function App() {
   const [isDonationOpen, setIsDonationOpen] = useState<boolean>(false);
   
   // Subscription & Pro States (3 € / mois ou 20 € / an)
-  const [isSubscriptionActive, setIsSubscriptionActive] = useState<boolean>(false);
+  // Aucun abonnement payant : tous les modules sont ouverts à tous.
+  const [isSubscriptionActive, setIsSubscriptionActive] = useState<boolean>(true);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState<boolean>(false);
   const [isArtworkToolsModalOpen, setIsArtworkToolsModalOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
@@ -845,7 +846,7 @@ export default function App() {
 
   // Handler: Cancel Subscription (for testing)
   const handleCancelSubscription = () => {
-    setIsSubscriptionActive(false);
+    setIsSubscriptionActive(true);
     localStorage.removeItem("oeilAtelier_subscriptionActive");
     localStorage.removeItem("oeilAtelier_subscriptionPlan");
     localStorage.removeItem("oeilAtelier_giftCode");
@@ -1275,17 +1276,6 @@ export default function App() {
             >
               <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c9a84c]" />
               <span>{t("hub_btn", "36 Outils IA")}</span>
-            </button>
-
-            {/* Atelier Pro - Bouton Doré Royal Prestigieux */}
-            <button
-              id="atelier-pro-top-btn"
-              onClick={() => setIsSubscriptionModalOpen(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs tracking-wider uppercase font-sans font-black transition-all duration-300 rounded-none shadow-md border bg-gradient-to-r from-[#b8973e] via-[#c9a84c] to-[#e4cb78] text-black border-[#c9a84c] hover:brightness-110 hover:shadow-[0_0_15px_rgba(201,168,76,0.45)] cursor-pointer"
-              title="Abonnement Atelier Pro : 3 € / mois ou 20 € / an (1ère année)"
-            >
-              <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black fill-black/20" />
-              <span>{isSubscriptionActive ? t("pro_active", "Atelier Pro (Actif)") : t("pro_btn", "Atelier Pro")}</span>
             </button>
 
             {/* Cartels Muraux & QR Codes de Vente Directe */}
@@ -2273,8 +2263,8 @@ export default function App() {
           : "border-black/5 bg-[#f0ebd8] text-stone-600"
       }`}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div>SYSTEM: OPTIMIZED | SERVER: PARIS_EAST</div>
-          <div>© 2026 ŒIL_ATELIER PRO TECHNOLOGY GROUP</div>
+          <div>Sans serveur : vos images restent sur cet appareil, sauf envoi à Google Gemini pour l'analyse</div>
+          <div>© 2026 Alphabette · L'Œil de l'Atelier — textes IA à vérifier</div>
         </div>
       </footer>
 

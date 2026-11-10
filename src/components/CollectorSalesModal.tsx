@@ -80,8 +80,9 @@ export default function CollectorSalesModal({
   };
 
   // Tax Calculations for Art. 238 bis AB CGI
-  const annualDeduction = artworkPrice / 5;
-  const taxSavingsTotal = (artworkPrice * (taxRate / 100));
+  // Plafond annuel légal : 20 000 € (ou 0,5 % du CA s'il est plus élevé, non connu ici).
+  const annualDeduction = Math.min(artworkPrice / 5, 20000);
+  const taxSavingsTotal = (annualDeduction * 5 * (taxRate / 100));
   const realCostAfterTax = artworkPrice - taxSavingsTotal;
 
   // Shipping Calculations
@@ -93,7 +94,7 @@ export default function CollectorSalesModal({
 
   // Default AI datasets
   const defaultAcquirerData = liveResults["sales_acquirer_profile"] || {
-    typologie_acquerreur_principal: "Professions libérales (avocats, médecins, notaires), cadres dirigeants du secteur tertiaire et architectes d'intérieur (35-58 ans), sensibles à l'authenticité de la facture et à l'énergie tellurique de la matière.",
+    typologie_acquerreur_principal: "Exemple de profil à adapter : professions libérales, cadres dirigeants du secteur tertiaire et architectes d'intérieur (35-58 ans), sensibles à l'authenticité de la facture et à l'énergie tellurique de la matière.",
     motivation_achat: "Recherche d'une pièce signature apaisante et affirmée, distinction sociale raffinée et volonté de soutenir un travail d'atelier rigoureux et sincère.",
     budget_cible_fourchette: "1 500 € à 4 800 € par pièce",
     environnements_recommandes: [
@@ -103,14 +104,14 @@ export default function CollectorSalesModal({
     ],
     argumentaire_vente_3_points: [
       "Unicité absolue et matérialité tactile impossible à reproduire numériquement.",
-      "Cote d'artiste établie avec certificat d'authenticité et traçabilité d'atelier.",
-      "Avantage fiscal immédiat (déduction à 100% sur 5 ans pour les sociétés et indépendants)."
+      "Œuvre livrée avec certificat d'authenticité signé et traçabilité d'atelier.",
+      "Pour une entreprise : déduction fiscale possible sur 5 ans (art. 238 bis AB du CGI), sous conditions."
     ]
   };
 
   const defaultTaxData = liveResults["sales_tax_defiscalisation"] || {
-    titre_accroche: "Optimisation Fiscale Entreprises & Professions Libérales (Art. 238 bis AB du CGI)",
-    mecanisme_art_238bis: "Les entreprises soumises à l'IS ou à l'IR (BIC/BNC) qui achètent des œuvres originales d'artistes vivants peuvent déduire 100% du prix d'acquisition de leur résultat imposable, par fractions égales de 20% par an pendant 5 ans, dans la limite de 20 000 € ou 0,5 % du chiffre d'affaires HT.",
+    titre_accroche: "Déduction fiscale pour les entreprises qui achètent une œuvre (Art. 238 bis AB du CGI)",
+    mecanisme_art_238bis: "Les entreprises soumises à l'IS, ou à l'IR dans la catégorie des BIC, qui achètent des œuvres originales d'artistes vivants peuvent déduire le prix d'acquisition de leur résultat imposable, par fractions égales de 20 % par an pendant 5 ans. La déduction de chaque année est limitée à 20 000 € ou 0,5 % du chiffre d'affaires HT si ce montant est plus élevé, après déduction des dons de mécénat ; la part qui dépasse est perdue. Les professions libérales (BNC) sont exclues. Dispositif applicable aux achats réalisés avant le 31 décembre 2028 (loi de finances pour 2026). Information générale : à faire valider par un expert-comptable.",
     exemple_chiffre: {
       prix_oeuvre: `${artworkPrice.toLocaleString("fr-FR")} € HT`,
       deduction_annuelle_5ans: `${annualDeduction.toLocaleString("fr-FR")} € / an`,
@@ -120,16 +121,16 @@ export default function CollectorSalesModal({
     conditions_legales_imperatives: [
       "L'œuvre doit être originale et créée par un artiste vivant.",
       "L'œuvre doit être exposée gratuitement dans un lieu accessible au public, aux clients ou aux salariés de l'entreprise pendant 5 ans.",
-      "L'entreprise doit inscrire la déduction à un compte de réserve spéciale au passif du bilan."
+      "L'œuvre est inscrite à l'actif immobilisé et une somme équivalente à la déduction est portée à un compte de réserve spéciale au passif du bilan."
     ],
-    modele_pitch_aux_entreprises: `Madame, Monsieur,\n\nVous recherchez une pièce artistique d'exception pour valoriser vos espaces de réception ou vos bureaux tout en optimisant votre fiscalité d'entreprise ?\n\nL'acquisition d'une œuvre originale de ${profile.name || "l'artiste"} bénéficie du régime d'incitation fiscale de l'Article 238 bis AB du CGI :\n- Déduction intégrale du prix d'achat (${artworkPrice} €) de votre bénéfice imposable sur 5 ans (${annualDeduction} €/an).\n- Économie fiscale nette de ${Math.round(taxSavingsTotal)} € pour votre société.\n- Facture officielle avec TVA et certificat d'authenticité conforme.\n\nRestant à votre disposition pour vous transmettre le catalogue complet et organiser une présentation privée.`
+    modele_pitch_aux_entreprises: `Madame, Monsieur,\n\nVous recherchez une pièce artistique d'exception pour valoriser vos espaces de réception ou vos bureaux tout en optimisant votre fiscalité d'entreprise ?\n\nL'acquisition d'une œuvre originale de ${profile.name || "l'artiste"} bénéficie du régime d'incitation fiscale de l'Article 238 bis AB du CGI :\n- Déduction du prix d'achat (${artworkPrice} €) de votre résultat imposable sur 5 ans (${annualDeduction} €/an), dans la limite annuelle prévue par la loi.\n- Économie d'impôt estimée à environ ${Math.round(taxSavingsTotal)} € (à confirmer par votre expert-comptable ; professions libérales en BNC exclues).\n- Facture officielle avec TVA et certificat d'authenticité conforme.\n\nRestant à votre disposition pour vous transmettre le catalogue complet et organiser une présentation privée.`
   };
 
   const defaultInvoiceData = liveResults["sales_invoice_certificate"] || {
     mentions_legales_obligatoires: [
       "Numérotation séquentielle et chronologique (ex: FA-2026-0042)",
-      "Numéro SIRET et mention MDA / URSSAF Limiteur Artiste-Auteur",
-      "Mention TVA : 'TVA non applicable, art. 293 B du CGI' (Franchise en base)",
+      "Numéro SIRET de l'artiste-auteur (régime social géré par l'Urssaf Limousin)",
+      "Mention TVA : 'TVA non applicable, art. 293 B du CGI' si vous êtes en franchise en base (seuils à vérifier sur impots.gouv.fr)",
       "Désignation précise : Titre de l'œuvre, Technique, Dimensions, Année"
     ],
     conditions_generales_vente: `Clause de Réserve de Propriété : L'œuvre vendue demeure la propriété exclusive et inaliénable de l'artiste jusqu'au paiement intégral du prix convenu.\nDroits d'Auteur : La vente de l'œuvre matérielle n'emporte pas cession des droits de reproduction et de représentation, qui restent la propriété exclusive de l'artiste conformément aux articles L.111-1 et suivants du Code de la Propriété Intellectuelle.`,
@@ -202,6 +203,17 @@ export default function CollectorSalesModal({
         </div>
 
         {/* 5 Collector & Sales Tabs */}
+        {Object.keys(liveResults).length === 0 ? (
+          <div className="px-4 py-2 text-xs font-sans font-semibold bg-amber-400 text-black">
+            EXEMPLE — Ces textes sont des modèles généraux : ils n'ont pas été calculés pour vos œuvres.
+            Lancez une analyse (clé Gemini dans le Profil Artiste) pour obtenir une proposition personnalisée.
+          </div>
+        ) : (
+          <div className="px-4 py-2 text-xs font-sans bg-amber-100 text-black">
+            Textes proposés par une IA (ou modèles d'exemple pour les parties non analysées) : relisez et vérifiez
+            chaque nom, chiffre et règle avant de vous en servir.
+          </div>
+        )}
         <div className={`flex border-b overflow-x-auto scrollbar-thin ${
           isDark ? "bg-black border-[#c9a84c]/20" : "bg-stone-100 border-stone-300"
         }`}>
@@ -410,12 +422,12 @@ export default function CollectorSalesModal({
                   <div className="flex items-center gap-2">
                     <Scale className="w-4 h-4 text-[#c9a84c]" />
                     <h3 className="font-serif font-bold text-sm text-[#c9a84c]">
-                      Simulateur Fiscal Mécénat d'Art (Article 238 bis AB du CGI)
+                      Estimation fiscale pour une entreprise (Article 238 bis AB du CGI)
                     </h3>
                   </div>
 
                   <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2.5 py-1 border border-emerald-500/40">
-                    Déduction Fiscale : 100% sur 5 ans
+                    Estimation indicative · achats avant le 31/12/2028
                   </span>
                 </div>
 
@@ -447,9 +459,9 @@ export default function CollectorSalesModal({
                     >
                       <option value={25}>IS Taux Normal (25 %)</option>
                       <option value={15}>IS Taux Réduit PME (15 %)</option>
-                      <option value={30}>IR Tranche 30 % (Prof. Libérale)</option>
-                      <option value={41}>IR Tranche 41 % (Prof. Libérale)</option>
-                      <option value={45}>IR Tranche 45 % (Hauts Revenus)</option>
+                      <option value={30}>IR tranche 30 % (entreprise en BIC)</option>
+                      <option value={41}>IR tranche 41 % (entreprise en BIC)</option>
+                      <option value={45}>IR tranche 45 % (entreprise en BIC)</option>
                     </select>
                   </div>
 
@@ -484,7 +496,7 @@ export default function CollectorSalesModal({
                 }`}>
                   <div className="border-b pb-2 border-[#c9a84c]/30">
                     <h4 className="font-serif font-bold text-xs text-[#c9a84c] uppercase">
-                      Bilan de l'Avantage Fiscal
+                      Estimation de l'avantage fiscal (indicative)
                     </h4>
                   </div>
 
@@ -504,7 +516,7 @@ export default function CollectorSalesModal({
                   </div>
 
                   <div className="space-y-2 pt-2">
-                    <h5 className="text-[11px] font-mono uppercase text-neutral-400">3 Conditions Légales Impératives :</h5>
+                    <h5 className="text-[11px] font-mono uppercase text-neutral-400">Conditions légales (à vérifier avec un expert-comptable) :</h5>
                     <ul className="space-y-1.5 text-xs font-sans">
                       {defaultTaxData.conditions_legales_imperatives?.map((cond: string, i: number) => (
                         <li key={i} className="flex items-start gap-2">
@@ -637,7 +649,7 @@ export default function CollectorSalesModal({
 
                   <div className="text-right text-xs font-sans">
                     <strong className="block font-serif text-sm">{profile.name || "ARTISTE AUTEUR"}</strong>
-                    <span className="text-neutral-400 block font-mono text-[11px]">N° SIRET : 849 203 910 00018 • Maison des Artistes</span>
+                    <span className="text-neutral-400 block font-mono text-[11px]">N° SIRET : à compléter (le vôtre)</span>
                   </div>
                 </div>
 

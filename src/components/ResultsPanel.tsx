@@ -521,6 +521,10 @@ export default function ResultsPanel({
               <h3 className={`text-xl sm:text-2xl md:text-3xl font-serif font-light tracking-tight uppercase mt-1 ${getHeadingText()}`}>
                 Positionnement & Estimation
               </h3>
+              <p className={`text-xs font-sans mt-2 normal-case tracking-normal ${getMutedText()}`}>
+                Estimation produite par une IA à partir d'une photo : ce n'est ni une expertise ni une cote
+                officielle. Le prix réel dépend de votre parcours, de vos ventes passées et du marché.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

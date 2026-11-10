@@ -218,6 +218,17 @@ export default function PressSocialBridgeModal({
         </div>
 
         {/* 5 Media & Press Tabs */}
+        {Object.keys(liveResults).length === 0 ? (
+          <div className="px-4 py-2 text-xs font-sans font-semibold bg-amber-400 text-black">
+            EXEMPLE — Ces textes sont des modèles généraux : ils n'ont pas été calculés pour vos œuvres.
+            Lancez une analyse (clé Gemini dans le Profil Artiste) pour obtenir une proposition personnalisée.
+          </div>
+        ) : (
+          <div className="px-4 py-2 text-xs font-sans bg-amber-100 text-black">
+            Textes proposés par une IA (ou modèles d'exemple pour les parties non analysées) : relisez et vérifiez
+            chaque nom, chiffre et règle avant de vous en servir.
+          </div>
+        )}
         <div className={`flex border-b overflow-x-auto scrollbar-thin ${
           isDark ? "bg-black border-[#c9a84c]/20" : "bg-stone-100 border-stone-300"
         }`}>

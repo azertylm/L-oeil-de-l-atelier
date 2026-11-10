@@ -80,7 +80,7 @@ export const FIFTY_INNOVATIONS = [
   { id: 17, role: "galeriste", category: "Statistiques & Curation", title: "Baromètre d'intérêt en temps réel de l'exposition", desc: "Visualisation des œuvres les plus scannées et des textes les plus lus par le public pendant le vernissage." },
   { id: 18, role: "galeriste", category: "Vente & Négociation", title: "Bouton de pose d'option discrète (48h)", desc: "Permet à un acheteur hésitant de poser une option sans pression, alertant le galeriste sur WhatsApp/Email." },
   { id: 19, role: "galeriste", category: "Communication", title: "Catalogue d'exposition dématérialisé zéro déchet", desc: "Économie de milliers d'euros d'impression de catalogues papier tout en offrant une expérience interactive." },
-  { id: 20, role: "galeriste", category: "Juridique & Fiscal", title: "Simulateur fiscal Entreprises (Art. 238bis AB)", desc: "Calcul immédiat de l'économie d'impôt sur les sociétés pour les professions libérales et entreprises en salle." },
+  { id: 20, role: "galeriste", category: "Juridique & Fiscal", title: "Simulateur fiscal Entreprises (Art. 238bis AB)", desc: "Estimation de l'économie d'impôt pour les entreprises (hors professions libérales en BNC) et entreprises en salle." },
   { id: 21, role: "galeriste", category: "Logistique", title: "Inventaire et fiches de stock automatisées", desc: "Chaque QR code sert de balise d'inventaire rapide lors des montages et démontages de foires d'art." },
   { id: 22, role: "galeriste", category: "Vente & Négociation", title: "Paiement d'acompte instantané (Stripe / CB)", desc: "Verrouillage de la vente sur place au cocktail avant que l'acheteur ne quitte la galerie." },
   { id: 23, role: "galeriste", category: "Curation", title: "Texte curatorial de salle d'autorité", desc: "Un texte institutionnel solide qui valorise l'accrochage et légitime les prix demandés." },
@@ -117,50 +117,10 @@ export const FIFTY_INNOVATIONS = [
   { id: 50, role: "vente", category: "Cercle d'Amis", title: "Club des Mécènes & Fidélisation de l'Atelier", desc: "Transformer les simples visiteurs d'un soir en soutiens pérennes de la création vivante." }
 ];
 
-// Messages de démonstration pour le Livre d'Or Visiteurs & Réservations
-const DEFAULT_GUESTBOOK: VisitorGuestbookEntry[] = [
-  {
-    id: "gb-1",
-    artworkTitle: "Soleil Noir & Matières",
-    visitorName: "Claire B.",
-    city: "Paris",
-    message: "Une lumière fascinante dans les bleus et ocres profonds. Félicitations pour ce travail de texture saisissant qui respire la sincérité !",
-    date: "12 Septembre 2026",
-    timestamp: Date.now() - 3600000 * 24
-  },
-  {
-    id: "gb-2",
-    artworkTitle: "Nocturne Minéral",
-    visitorName: "Marc V.",
-    city: "Bruxelles (Collectionneur)",
-    message: "Découvert au vernissage de samedi, une présence très puissante en salle. Hâte de suivre vos prochaines séries d'atelier.",
-    date: "10 Septembre 2026",
-    timestamp: Date.now() - 3600000 * 72
-  },
-  {
-    id: "gb-3",
-    artworkTitle: "Soleil Noir & Matières",
-    visitorName: "Élodie & Thomas",
-    city: "Lyon",
-    message: "L'audioguide avec le QR code nous a fait vivre un moment très touchant au casque. Bravo pour cette belle passerelle d'accès à l'art !",
-    date: "08 Septembre 2026",
-    timestamp: Date.now() - 3600000 * 120
-  }
-];
+// Plus de faux messages ni de fausse réservation : les listes démarrent vides.
+const DEFAULT_GUESTBOOK: VisitorGuestbookEntry[] = [];
 
-const DEFAULT_OPTIONS: VisitorOptionItem[] = [
-  {
-    id: "opt-1",
-    artworkTitle: "Soleil Noir & Matières",
-    artworkPrice: "2 800 €",
-    visitorName: "Laurent de Saint-Maur",
-    visitorEmail: "laurent.stmaur@cabinet-conseil.fr",
-    visitorPhone: "+33 6 12 34 56 78",
-    message: "Bonjour, nous souhaitons poser une option 48h pour notre siège social (acquisition en mécénat Art. 238 bis AB). Merci de nous rappeler.",
-    date: "11 Septembre 2026",
-    status: "pending"
-  }
-];
+const DEFAULT_OPTIONS: VisitorOptionItem[] = [];
 
 export default function QrSalesCartelModal({
   isOpen,
@@ -194,11 +154,11 @@ export default function QrSalesCartelModal({
   
   // Contact & Gallery info
   const [galleryName, setGalleryName] = useState<string>("Galerie de l'Atelier");
-  const [contactEmail, setContactEmail] = useState<string>(profile.web ? `contact@${profile.web}` : "galerie.atelier@art.com");
-  const [contactPhone, setContactPhone] = useState<string>("+33 (0)1 42 68 50 00");
+  const [contactEmail, setContactEmail] = useState<string>(profile.contactEmail || "");
+  const [contactPhone, setContactPhone] = useState<string>(profile.phone || "");
   const [cartelStyle, setCartelStyle] = useState<"museum_white" | "atelier_dark" | "gold_luxury">("museum_white");
   const [qrDestination, setQrDestination] = useState<"visitor_sheet" | "payment_link" | "whatsapp">("visitor_sheet");
-  const [customPaymentUrl, setCustomPaymentUrl] = useState<string>("https://buy.stripe.com/demo_art_atelier");
+  const [customPaymentUrl, setCustomPaymentUrl] = useState<string>("");
 
   // Purchase Contract & Certificate of Authenticity (COA) State
   const [buyerName, setBuyerName] = useState<string>("Jean de Saint-Germain");
@@ -345,11 +305,20 @@ export default function QrSalesCartelModal({
     ? `${window.location.origin}/#visiteur-oeuvre-${encodeURIComponent(artworkTitle.replace(/\s+/g, '-').toLowerCase())}`
     : `https://art-atelier.app/#visiteur`;
 
-  const qrPayload = qrDestination === "payment_link" 
-    ? customPaymentUrl
+  // Sans serveur, une « fiche visiteur » ouverte sur le téléphone d'un visiteur ne peut rien
+  // transmettre à l'artiste. Le QR ouvre donc un vrai moyen de contact : un e-mail pré-rempli,
+  // WhatsApp, ou le lien de paiement que l'artiste a lui-même créé.
+  const messageVisiteur = `Bonjour, je suis devant l'œuvre "${artworkTitle}" (${artworkPrice}) et je souhaite plus de renseignements.`;
+  const lienEmail = contactEmail.trim()
+    ? `mailto:${contactEmail.trim()}?subject=${encodeURIComponent(`Œuvre « ${artworkTitle} »`)}&body=${encodeURIComponent(messageVisiteur)}`
+    : "";
+  const numeroWhatsapp = contactPhone.replace(/[^0-9]/g, '').replace(/^330/, '33').replace(/^0/, '33');
+  const lienWhatsapp = numeroWhatsapp.length >= 9 ? `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(messageVisiteur)}` : "";
+  const qrPayload = qrDestination === "payment_link"
+    ? (customPaymentUrl.trim() || lienEmail || publicShareUrl)
     : qrDestination === "whatsapp"
-      ? `https://wa.me/${contactPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Bonjour, je suis devant l'œuvre "${artworkTitle}" (${artworkPrice}) et je souhaite plus de renseignements.`)}`
-      : publicShareUrl;
+      ? (lienWhatsapp || lienEmail || publicShareUrl)
+      : (lienEmail || lienWhatsapp || publicShareUrl);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -827,9 +796,9 @@ export default function QrSalesCartelModal({
                           }`}
                         >
                           <span className="flex items-center gap-1 font-bold">
-                            <Eye className="w-3.5 h-3.5 shrink-0" /> Fiche Visiteur
+                            <Eye className="w-3.5 h-3.5 shrink-0" /> E-mail à l'artiste
                           </span>
-                          <span className="text-[10px] opacity-75 mt-1">Audioguide IA + Option</span>
+                          <span className="text-[10px] opacity-75 mt-1">Message pré-rempli (renseignez votre e-mail)</span>
                         </button>
 
                         <button
@@ -1031,7 +1000,7 @@ export default function QrSalesCartelModal({
                 }`}>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[11px] text-[#c9a84c] font-bold">
-                      Lien direct pour les visiteurs :
+                      Ce que le QR code ouvre chez le visiteur :
                     </span>
                     <button
                       type="button"
@@ -1218,10 +1187,10 @@ export default function QrSalesCartelModal({
                       <Briefcase className="w-4 h-4 text-[#c9a84c]" />
                       <div>
                         <h4 className="font-serif font-bold text-xs uppercase tracking-wide">
-                          Entreprises & Professions Libérales • Déduction Fiscale
+                          Entreprises • Déduction Fiscale (sous conditions)
                         </h4>
                         <p className="text-[10px] opacity-70">
-                          Article 238 bis AB du Code Général des Impôts : 100% du prix déductible sur 5 ans.
+                          Article 238 bis AB du CGI : prix déductible du résultat sur 5 ans, dans une limite annuelle.
                         </p>
                       </div>
                     </div>
@@ -1254,7 +1223,7 @@ export default function QrSalesCartelModal({
                         </div>
                       </div>
                       <p className="text-[10px] opacity-75 italic leading-relaxed">
-                        * Les entreprises soumises à l'IS ou à l'IR (BIC/BNC) peuvent déduire le prix d'acquisition des œuvres originales d'artistes vivants par fractions égales sur 5 ans, dans la limite de 20 000 € ou 5 ‰ du chiffre d'affaires, à condition d'exposer l'œuvre dans un lieu accessible au public ou aux salariés pendant cette période.
+                        * Estimation indicative. Les entreprises à l'IS (ou à l'IR en BIC ; les professions libérales en BNC sont exclues) peuvent déduire le prix d'une œuvre originale d'artiste vivant par fractions égales sur 5 ans, dans la limite annuelle de 20 000 € ou 0,5 % du chiffre d'affaires si c'est plus élevé (dons de mécénat déduits), à condition d'exposer l'œuvre dans un lieu accessible au public ou aux salariés pendant 5 ans. Valable pour les achats faits avant le 31 décembre 2028 (loi de finances 2026). À faire confirmer par l'expert-comptable de l'acheteur.
                       </p>
                     </div>
                   )}
@@ -1313,9 +1282,9 @@ export default function QrSalesCartelModal({
                   {visitorOptionSent ? (
                     <div className="p-4 bg-emerald-950/40 border border-emerald-500 text-emerald-300 text-xs space-y-2 text-center">
                       <CheckCircle2 className="w-6 h-6 mx-auto text-emerald-400" />
-                      <p className="font-bold uppercase tracking-wider text-sm">Option de réservation transmise !</p>
+                      <p className="font-bold uppercase tracking-wider text-sm">Aperçu : option notée sur cet appareil</p>
                       <p className="opacity-80">
-                        La galerie a bien reçu votre demande pour <strong>« {artworkTitle} »</strong>. Votre option de 48h a été enregistrée avec succès.
+                        Ceci est une démonstration : la demande pour <strong>« {artworkTitle} »</strong> est seulement notée sur cet appareil, rien n'est envoyé. Un vrai visiteur vous contacte par l'e-mail ou le WhatsApp du QR code.
                       </p>
                       <button
                         type="button"
@@ -1395,7 +1364,7 @@ export default function QrSalesCartelModal({
                   {guestbookSent ? (
                     <div className="p-3 bg-emerald-950/40 border border-emerald-500 text-emerald-300 text-xs text-center space-y-1">
                       <p className="font-bold">Merci infiniment pour vos mots ! ❤️</p>
-                      <p className="opacity-80">Votre mot d'or a été transmis dans le carnet privé de l'artiste.</p>
+                      <p className="opacity-80">Message noté dans le carnet de cet appareil (rien n'est envoyé par Internet).</p>
                     </div>
                   ) : (
                     <div className="space-y-2 text-xs">
@@ -1513,7 +1482,7 @@ export default function QrSalesCartelModal({
 
                 {visitorOptions.length === 0 ? (
                   <div className="p-6 text-center border border-dashed border-white/10 text-xs opacity-60">
-                    Aucune option d'acquisition posée pour l'instant. Les options envoyées depuis la fiche visiteur s'afficheront ici.
+                    Aucune option notée. Ce carnet vit sur cet appareil : utilisez-le en salle (tablette ou téléphone de l'artiste) pour noter les demandes des visiteurs.
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
