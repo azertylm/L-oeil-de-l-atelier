@@ -64,3 +64,5 @@ export {
   type ShellStatus,
   type ShellPanelId,
 } from './config';
+export { lirePrefs, ecrirePrefs, type Prefs } from './prefs';
+export { type Langue } from './libelles';

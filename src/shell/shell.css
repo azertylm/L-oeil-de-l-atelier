@@ -21,10 +21,9 @@
 /* La densité change la taille de base : toute mesure en rem suit, donc les
    barres ET le contenu de l'application. */
 
-html[data-ab-density='compact'] { font-size: 93.75%; }
 html[data-ab-density='normal']  { font-size: 100%; }
-/* « Grand » doit vraiment aider quelqu'un qui voit mal : +31 %, pas un simple réglage de confort. */
-html[data-ab-density='large']   { font-size: 131.25%; }
+html[data-ab-density='large']   { font-size: 125%; }
+html[data-ab-density='xlarge']  { font-size: 150%; }
 
 /* ================================= Coquille ============================== */
 
@@ -851,4 +850,181 @@ html[data-ab-theme='nuit'] .ab-don-carte > .ab-etiquette {
     height: 0.45rem;
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--ab-ok) 25%, transparent);
   }
+}
+
+/* ======================= Double barre : nouvelle version ==================== */
+
+/* Bulle d'aide : le mot du bouton, au survol de la souris, au clavier ou au doigt. */
+.ab-tip {
+  position: fixed;
+  z-index: 2147483000;
+  max-width: min(18rem, calc(100vw - 1rem));
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #0f172a;
+  color: #fff;
+  font: 600 0.85rem/1.25 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform: translateX(-50%);
+}
+
+/* Barre 1 : « α alphabette » discret, applis, nouveautés, favoris, S'abonner. */
+.ab-eco__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  opacity: 0.92;
+}
+.ab-eco__logo:hover { opacity: 1; text-decoration: underline; }
+.ab-eco__logo .ab-eco__brand-mark { width: 1rem; height: 1rem; font-size: 0.6rem; }
+.ab-eco__icone {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 12%, transparent);
+  color: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.ab-eco__icone:hover { background: color-mix(in srgb, #fff 24%, transparent); }
+.ab-eco__icone:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.ab-eco__point {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.1rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: #ef4444;
+  border: 2px solid var(--ab-eco-bg);
+}
+.ab-eco__favoris { display: flex; align-items: center; gap: 0.25rem; min-width: 0; }
+.ab-abonner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2rem;
+  padding: 0 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ab-pass);
+  color: #3a2a00;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ab-abonner:hover { background: color-mix(in oklab, var(--ab-pass) 88%, #000); }
+.ab-abonner:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Barre 2 : boutons-pictogrammes. */
+.ab-pico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--ab-border);
+  border-radius: 0.8rem;
+  background: var(--ab-chip);
+  color: var(--ab-ink);
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.ab-pico:hover { background: var(--ab-chip-hover); }
+.ab-pico:focus-visible { outline: 2px solid var(--ab-accent); outline-offset: 2px; }
+.ab-pico--don { background: var(--ab-don); border-color: transparent; color: #fff; }
+.ab-pico--don:hover { background: color-mix(in oklab, var(--ab-don) 85%, #000); }
+.ab-pico--big { background: var(--ab-accent); border-color: transparent; color: #fff; font-size: 0.9rem; letter-spacing: 0.04em; }
+.ab-pico--big:hover { background: color-mix(in oklab, var(--ab-accent) 85%, #000); }
+.ab-pico--actif { background: var(--ab-accent); border-color: transparent; color: #fff; }
+.ab-pico .ab-density__bar { background: color-mix(in srgb, #fff 40%, transparent); opacity: 1; }
+.ab-pico .ab-density__bar--on { background: #fff; }
+.ab-bar__actions { position: relative; }
+
+/* Menu « ⋯ » : grandes cases, un pictogramme et un mot. */
+.ab-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 70;
+  width: min(21rem, calc(100vw - 1rem));
+  padding: 0.6rem;
+  border: 1px solid var(--ab-border);
+  border-radius: 1rem;
+  background: var(--ab-surface);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.ab-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3.2rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ab-border);
+  border-radius: 0.8rem;
+  background: var(--ab-chip);
+  color: var(--ab-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+}
+.ab-menu__item:hover { background: var(--ab-chip-hover); }
+.ab-menu__item:focus-visible { outline: 2px solid var(--ab-accent); outline-offset: 1px; }
+.ab-menu__item[aria-pressed='true'] { border-color: var(--ab-accent); background: color-mix(in srgb, var(--ab-accent) 16%, var(--ab-chip)); }
+.ab-menu__emoji { font-size: 1.5rem; line-height: 1; flex: none; }
+
+.ab-choix-langue { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.ab-choix-langue .ab-btn[aria-pressed='true'] { background: var(--ab-accent); color: #fff; }
+
+/* Mode simple : moins de décor, texte plus lisible. */
+html[data-ab-simple] *, html[data-ab-simple] *::before, html[data-ab-simple] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-ab-simple] aside,
+html[data-ab-simple] [data-ab-secondaire] { display: none !important; }
+html[data-ab-simple] .ab-content { max-width: 48rem; margin-inline: auto; line-height: 1.7; }
+
+/* Impression : seul le contenu de la page sort sur le papier. */
+@media print {
+  .ab-eco, .ab-bar, .ab-overlay, .ab-tip, .ab-sortie-immersion { display: none !important; }
+  .ab-shell { display: block !important; background: #fff !important; color: #000 !important; }
+  html { font-size: 100% !important; }
+}
+
+/* Téléphone : barre 1 compacte, favoris masqués (ils sont dans le panneau « Toutes les applis »). */
+@media (max-width: 760px) {
+  .ab-eco__favoris { display: none; }
+  .ab-pico { min-width: 2.3rem; height: 2.3rem; padding: 0 0.4rem; }
+  .ab-bar__actions { gap: 0.3rem; }
+  .ab-menu { grid-template-columns: 1fr; }
 }

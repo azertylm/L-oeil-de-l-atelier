@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export type ShellStatus = 'ok' | 'loading' | 'off';
 
 /** Les cinq panneaux que la base sait ouvrir par-dessus le contenu. */
-export type ShellPanelId = 'compte' | 'cles' | 'pass' | 'sites' | 'dons';
+export type ShellPanelId = 'compte' | 'cles' | 'pass' | 'sites' | 'dons' | 'nouveautes' | 'langue' | 'installer';
 
 export interface AlphaSite {
   /** Identifiant technique. */

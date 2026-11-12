@@ -253,6 +253,20 @@ export default function App() {
     }
   }, []);
 
+  // Le bouton ☀️/🌙 de la double barre change aussi le thème de l'application (nuit = noir et or, jour = clair).
+  useEffect(() => {
+    const observateur = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.oldValue === null) continue; // premier réglage au chargement : on garde le thème de l'application
+        const prochain = document.documentElement.dataset.abTheme === "nuit" ? "dark-gold" : "light";
+        setTheme(prochain);
+        localStorage.setItem("oeilAtelier_theme", prochain);
+      }
+    });
+    observateur.observe(document.documentElement, { attributes: true, attributeFilter: ["data-ab-theme"], attributeOldValue: true });
+    return () => observateur.disconnect();
+  }, []);
+
   const handleToggleTheme = () => {
     const nextTheme = theme === "dark-gold" ? "light" : "dark-gold";
     setTheme(nextTheme);

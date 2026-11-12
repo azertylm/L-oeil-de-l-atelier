@@ -22,6 +22,8 @@ export interface EcosystemApp {
   status?: string;
   /** Application gratuite, publiée ainsi par le hub. */
   gratuit?: boolean;
+  /** Phrase de présentation publiée par le hub. */
+  description?: string;
 }
 
 /**
@@ -86,6 +88,7 @@ interface ReponseHub {
     badge?: string | null;
     status?: string;
     gratuit?: boolean;
+    description?: string;
   }>;
 }
 
@@ -128,6 +131,7 @@ export async function loadEcosystemRegistry(hubUrl: string): Promise<RegistreApp
         badge: app.badge ? reparerTexte(app.badge) : null,
         status: app.status,
         gratuit: app.gratuit === true,
+        description: app.description ? reparerTexte(String(app.description)) : undefined,
       }));
     if (!apps.length) throw new Error('registre vide');
     return { apps, source: 'hub' };

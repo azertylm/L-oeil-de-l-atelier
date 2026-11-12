@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ecrirePrefs, lirePrefs } from './prefs';
 
 /** Thème de l'interface : « jour » (clair) ou « nuit » (sombre). */
 export type ShellTheme = 'jour' | 'nuit';
 
-/** Trois crans de densité, pilotés par le bouton « BIG ». */
-export type ShellDensity = 'compact' | 'normal' | 'large';
+/** Trois tailles d'affichage, pilotées par le bouton « BIG » : normale, grande (+25 %), très grande (+50 %). */
+export type ShellDensity = 'normal' | 'large' | 'xlarge';
 
-export const DENSITY_ORDER: ShellDensity[] = ['compact', 'normal', 'large'];
+export const DENSITY_ORDER: ShellDensity[] = ['normal', 'large', 'xlarge'];
 export const DENSITY_LABELS: Record<ShellDensity, string> = {
-  compact: 'Compact',
-  normal: 'Normal',
-  large: 'Grand',
+  normal: 'Normale',
+  large: 'Grande',
+  xlarge: 'Très grande',
 };
 
 const THEME_KEY = 'alphabette.shell.theme';
@@ -61,9 +62,11 @@ export function themeDuSysteme(): ShellTheme {
 
 /** Thème jour / nuit, mémorisé et appliqué à la page entière. */
 export function useTheme(initial?: ShellTheme) {
-  const [theme, setThemeState] = useState<ShellTheme>(() =>
-    readStored<ShellTheme>(THEME_KEY, ['jour', 'nuit'], initial ?? themeDuSysteme()),
-  );
+  const [theme, setThemeState] = useState<ShellTheme>(() => {
+    const partage = lirePrefs().theme;
+    if (partage === 'jour' || partage === 'nuit') return partage;
+    return readStored<ShellTheme>(THEME_KEY, ['jour', 'nuit'], initial ?? themeDuSysteme());
+  });
 
   // À chaque rendu, on s'assure que le document porte bien le thème courant.
   useEffect(() => {
@@ -73,12 +76,14 @@ export function useTheme(initial?: ShellTheme) {
   const setTheme = useCallback((next: ShellTheme) => {
     setThemeState(next);
     writeStored(THEME_KEY, next);
+    ecrirePrefs({ theme: next });
   }, []);
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
       const next: ShellTheme = prev === 'jour' ? 'nuit' : 'jour';
       writeStored(THEME_KEY, next);
+      ecrirePrefs({ theme: next });
       return next;
     });
   }, []);
@@ -88,9 +93,12 @@ export function useTheme(initial?: ShellTheme) {
 
 /** Densité d'affichage à 3 crans, mémorisée et appliquée à la page entière. */
 export function useDensity(initial: ShellDensity = 'normal') {
-  const [density, setDensityState] = useState<ShellDensity>(() =>
-    readStored<ShellDensity>(DENSITY_KEY, DENSITY_ORDER, initial),
-  );
+  const [density, setDensityState] = useState<ShellDensity>(() => {
+    // Réglage partagé entre tous les sites (cookie du domaine) ; l'ancien cran « compact » devient « normal ».
+    const partage = lirePrefs().density;
+    if (partage && DENSITY_ORDER.includes(partage)) return partage;
+    return readStored<ShellDensity>(DENSITY_KEY, DENSITY_ORDER, initial);
+  });
 
   useEffect(() => {
     appliquerDensiteAuDocument(density);
@@ -99,13 +107,15 @@ export function useDensity(initial: ShellDensity = 'normal') {
   const setDensity = useCallback((next: ShellDensity) => {
     setDensityState(next);
     writeStored(DENSITY_KEY, next);
+    ecrirePrefs({ density: next });
   }, []);
 
-  /** Passe au cran suivant : compact → normal → large → compact. */
+  /** Passe à la taille suivante : normale → grande → très grande → normale. */
   const cycleDensity = useCallback(() => {
     setDensityState((prev) => {
       const next = DENSITY_ORDER[(DENSITY_ORDER.indexOf(prev) + 1) % DENSITY_ORDER.length];
       writeStored(DENSITY_KEY, next);
+      ecrirePrefs({ density: next });
       return next;
     });
   }, []);

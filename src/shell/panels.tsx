@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useShell } from './ShellContext';
 import type { EcosystemApp } from './apps';
 import type { AlphaAppConfig, ShellStatus } from './config';
 import { IconCheck, IconCopy, IconExternal, IconHeart, IconShield, IconSparkles, IconStar } from './icons';
@@ -19,6 +20,9 @@ export const SHELL_PANELS: Record<ShellPanelId, { titre: string; sousTitre: stri
   pass: { titre: 'Le Pass alphabette', sousTitre: 'Débloquer les applications', icone: '⭐' },
   sites: { titre: 'Les applications de l’écosystème', sousTitre: 'Registre central alphabette.fr', icone: '🧭' },
   dons: { titre: 'Soutenir alphabette.fr', sousTitre: 'Sans publicité, sans revente de données', icone: '♥' },
+  nouveautes: { titre: 'Les nouveautés', sousTitre: 'Les dernières applications et les derniers jeux', icone: '🆕' },
+  langue: { titre: 'Langue', sousTitre: 'Français ou English', icone: '🌍' },
+  installer: { titre: 'Installer sur mon téléphone', sousTitre: 'L’appli à portée de doigt, sans magasin d’applications', icone: '📲' },
 };
 
 /**
@@ -76,6 +80,8 @@ const euros = (montant: number) => `${montant} €`;
 
 /** Une ligne d'application dans le panneau « sites ». */
 function LigneApp({ app, courant }: { app: EcosystemApp; courant: boolean }) {
+  const { favoris, basculerFavori, t } = useShell();
+  const epingle = favoris.includes(app.key);
   const contenu = (
     <>
       <span className="ab-liste__initial" aria-hidden="true">
@@ -95,23 +101,39 @@ function LigneApp({ app, courant }: { app: EcosystemApp; courant: boolean }) {
     </>
   );
 
+  const etoile = (
+    <button
+      type="button"
+      className="ab-pico"
+      style={{ height: '2.2rem', minWidth: '2.2rem' }}
+      aria-pressed={epingle}
+      aria-label={epingle ? t('Retirer de mes favoris') : t('Épingler cette appli')}
+      data-ab-tip={epingle ? t('Retirer de mes favoris') : t('Épingler cette appli')}
+      onClick={() => basculerFavori(app.key)}
+    >
+      {epingle ? '★' : '☆'}
+    </button>
+  );
+
   // Site courant, ou application sans adresse publique : pas un lien.
   if (courant || !app.url) {
     return (
-      <li>
-        <div className="ab-liste__item" style={{ cursor: 'default' }}>
+      <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="ab-liste__item" style={{ cursor: 'default', flex: 1 }}>
           {contenu}
         </div>
+        {etoile}
       </li>
     );
   }
 
   // Navigation dans le même onglet, comme la barre écosystème.
   return (
-    <li>
-      <a className="ab-liste__item" href={app.url}>
+    <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <a className="ab-liste__item" href={app.url} style={{ flex: 1 }}>
         {contenu}
       </a>
+      {etoile}
     </li>
   );
 }
@@ -393,7 +415,12 @@ function PanneauSites({ app, apps, registreOk, hubUrl, ouvrir, basculer }: Panne
   const gratuites = apps.filter((entree) => entree.gratuit).length;
   // Les applications gratuites d'abord : ce sont celles que l'on peut ouvrir
   // tout de suite. Le tri est stable, l'ordre du registre est conservé ensuite.
-  const liste = [...apps].sort((a, b) => Number(Boolean(b.gratuit)) - Number(Boolean(a.gratuit)));
+  const { favoris } = useShell();
+  const liste = [...apps].sort(
+    (a, b) =>
+      Number(favoris.includes(b.key)) - Number(favoris.includes(a.key)) ||
+      Number(Boolean(b.gratuit)) - Number(Boolean(a.gratuit)),
+  );
   return (
     <>
       <div className="ab-panneau">
@@ -839,6 +866,103 @@ function PanneauDons(props: PanneauProps) {
   return don ? <EspaceDons {...props} don={don} /> : <PanneauDonsSimple {...props} />;
 }
 
+function PanneauNouveautes() {
+  const { nouveautes, marquerNouveautesVues } = useShell();
+  useEffect(() => {
+    marquerNouveautesVues();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <>
+      {nouveautes.length === 0 ? (
+        <div className="ab-panneau">
+          <p>Pas de nouveauté pour l’instant. Revenez bientôt !</p>
+        </div>
+      ) : (
+        <ul className="ab-liste">
+          {nouveautes.map((a) => (
+            <li key={a.key}>
+              <a className="ab-liste__item" href={a.url} style={{ alignItems: 'flex-start' }}>
+                <span className="ab-liste__initial" aria-hidden="true">{a.icon ?? '🆕'}</span>
+                <span className="ab-liste__nom">
+                  {a.name}
+                  {a.description ? (
+                    <span style={{ display: 'block', fontWeight: 400, fontSize: '0.85rem', opacity: 0.8 }}>
+                      {a.description}
+                    </span>
+                  ) : null}
+                </span>
+                {a.gratuit ? <span className="ab-etiquette ab-etiquette--accent">Gratuit</span> : null}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function PanneauLangue() {
+  const { langue, setLangue } = useShell();
+  const traduction = `https://translate.google.com/translate?sl=fr&tl=en&u=${encodeURIComponent(
+    typeof location === 'undefined' ? '' : location.href,
+  )}`;
+  return (
+    <>
+      <div className="ab-panneau">
+        <h4>Langue de la barre</h4>
+        <div className="ab-choix-langue">
+          <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" aria-pressed={langue === 'fr'} onClick={() => setLangue('fr')}>
+            🇫🇷 Français
+          </button>
+          <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" aria-pressed={langue === 'en'} onClick={() => setLangue('en')}>
+            🇬🇧 English
+          </button>
+        </div>
+      </div>
+      <div className="ab-panneau">
+        <h4>Traduire le contenu de la page</h4>
+        <p>
+          Les applications sont écrites en français. Pour les lire en anglais, une traduction automatique par Google
+          Traduction s’ouvre dans un nouvel onglet : la page lui est alors transmise, et vos données restent sur
+          l’original.
+        </p>
+        <div className="ab-actions-ligne">
+          <a className="ab-btn ab-btn--accent ab-btn--lg" href={traduction} target="_blank" rel="noopener noreferrer">
+            🌍 Open in English <IconExternal width={14} height={14} />
+          </a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PanneauInstaller() {
+  const { installation } = useShell();
+  const etapes: Record<string, string[]> = {
+    ios: ['Ouvrez cette page dans Safari.', 'Touchez le bouton Partager (le carré avec une flèche vers le haut).', 'Choisissez « Sur l’écran d’accueil », puis « Ajouter ».'],
+    android: ['Touchez les trois points ⋮ en haut à droite du navigateur.', 'Choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».', 'Validez : l’icône apparaît parmi vos applications.'],
+    ordinateur: ['Dans la barre d’adresse, cherchez l’icône « Installer » (un écran avec une flèche).', 'Sinon, ouvrez le menu du navigateur et choisissez « Installer » ou « Créer un raccourci ».'],
+  };
+  const liste = etapes[installation.plateforme];
+  return (
+    <>
+      <div className="ab-panneau">
+        <h4>Comment faire</h4>
+        <ol style={{ paddingLeft: '1.2rem', display: 'grid', gap: '0.5rem' }}>
+          {liste.map((e) => (
+            <li key={e}>{e}</li>
+          ))}
+        </ol>
+      </div>
+      <p className="ab-note">
+        L’installation ajoute un raccourci sur l’écran d’accueil : l’application s’ouvre ensuite en plein écran, comme
+        une application ordinaire. Elle ne passe par aucun magasin d’applications.
+      </p>
+    </>
+  );
+}
+
 /** Rend le panneau demandé. */
 export function PanneauShell({ id, ...props }: PanneauProps & { id: ShellPanelId }) {
   switch (id) {
@@ -852,6 +976,12 @@ export function PanneauShell({ id, ...props }: PanneauProps & { id: ShellPanelId
       return <PanneauSites {...props} />;
     case 'dons':
       return <PanneauDons {...props} />;
+    case 'nouveautes':
+      return <PanneauNouveautes />;
+    case 'langue':
+      return <PanneauLangue />;
+    case 'installer':
+      return <PanneauInstaller />;
     default:
       return null;
   }

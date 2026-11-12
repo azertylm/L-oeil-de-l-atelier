@@ -42,4 +42,4 @@ body {
    et son propre réglage de thème (le bouton Jour / Nuit de la barre est masqué
    pour ne pas laisser croire qu'il change toute la page). */
 .ab-shell > .ab-content { padding: 0; }
-.ab-bar .ab-theme--jour, .ab-bar .ab-theme--nuit { display: none; }
+/* Le bouton ☀️/🌙 de la barre pilote le thème de l'application (voir App.tsx). */

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { AppHeader } from './AppHeader';
 import { EcosystemBar } from './EcosystemBar';
+import { InfoBulle } from './InfoBulle';
+import { plateforme, useFavoris, useInstallation, useLangue, useLectureVocale, useModeSimple, useNouveautes } from './outils';
 import { loadEcosystemRegistry, synchroniserSites, type EcosystemApp, type RegistreApps } from './apps';
 import type { AlphaAppConfig, AlphaSite, ShellPanelId } from './config';
 import { useDensity, useFullscreen, useTheme, type ShellDensity, type ShellTheme } from './hooks';
@@ -83,6 +85,11 @@ export function AppShell({
   const { theme, setTheme, toggleTheme } = useTheme(initialTheme);
   const { density, setDensity, cycleDensity } = useDensity(initialDensity);
   const { isFullscreen, isImmersion, toggleFullscreen } = useFullscreen();
+  const { langue, setLangue, t } = useLangue();
+  const { favoris, basculer: basculerFavori } = useFavoris();
+  const { simple, basculer: basculerSimple } = useModeSimple();
+  const lecture = useLectureVocale(langue);
+  const installation = useInstallation();
   const [remoteConfig, setRemoteConfig] = useState<ShellConfig>(config ?? FALLBACK_CONFIG);
   const [panel, setPanel] = useState<ShellPanelId | null>(null);
   const [appsHub, setAppsHub] = useState<EcosystemApp[]>([]);
@@ -141,6 +148,7 @@ export function AppShell({
     return [courante, ...appsHub];
   }, [appsHub, app.key, app.name, app.subdomain, app.icon]);
 
+  const { nouvelles, nonVues, marquerVues } = useNouveautes(apps, app.key);
   const openPanel = useCallback((id: ShellPanelId) => setPanel(id), []);
   const closePanel = useCallback(() => setPanel(null), []);
 
@@ -211,6 +219,25 @@ export function AppShell({
       openPanel,
       closePanel,
 
+      langue,
+      setLangue,
+      t,
+      favoris,
+      basculerFavori,
+      nouveautes: nouvelles,
+      nouveautesNonVues: nonVues,
+      marquerNouveautesVues: marquerVues,
+      simple,
+      basculerSimple,
+      lecture,
+      installation: { installee: installation.installee, directe: installation.directe, installer: installation.installer, plateforme: plateforme() },
+      donnerAvis: () => {
+        const objet = encodeURIComponent(`Avis sur ${app.name}`);
+        const corps = encodeURIComponent(`Bonjour,\n\nMon avis sur ${app.name} :\n\n\n(Page : ${location.href})`);
+        window.location.href = `mailto:contact@alphabette.fr?subject=${objet}&body=${corps}`;
+      },
+      imprimer: () => window.print(),
+
       hubUrl: resolvedHubUrl,
       config: shellConfig,
       apps,
@@ -235,6 +262,18 @@ export function AppShell({
     panel,
     openPanel,
     closePanel,
+    langue,
+    setLangue,
+    t,
+    favoris,
+    basculerFavori,
+    nouvelles,
+    nonVues,
+    marquerVues,
+    simple,
+    basculerSimple,
+    lecture,
+    installation,
     resolvedHubUrl,
     shellConfig,
     apps,
@@ -254,31 +293,8 @@ export function AppShell({
         data-ab-density={density}
         style={app.accent ? ({ '--ab-accent': app.accent } as CSSProperties) : undefined}
       >
-        <EcosystemBar
-          app={app}
-          sites={sitesFinaux}
-          maxSites={maxSites}
-          hubUrl={resolvedHubUrl}
-          config={shellConfig}
-          counter={counterFinal}
-          onOpenPayment={value.openPayment}
-          onOpenDon={() => openPanel('dons')}
-          onOpenSites={() => openPanel('sites')}
-        />
-        <AppHeader
-          app={app}
-          density={density}
-          theme={theme}
-          isFullscreen={isFullscreen}
-          isImmersion={isImmersion}
-          onToggleDensity={cycleDensity}
-          onToggleTheme={toggleTheme}
-          onToggleFullscreen={toggleFullscreen}
-          onOpenAccount={value.openAccount}
-          onOpenApiKeys={value.openApiKeys}
-          onOpenDon={() => openPanel('dons')}
-          onToggleNav={onToggleNav}
-        />
+        <EcosystemBar app={app} sites={sitesFinaux} hubUrl={resolvedHubUrl} apps={apps} />
+        <AppHeader app={app} onToggleNav={onToggleNav} />
         <div className="ab-content" role="region" aria-label={app.name}>
           {children}
         </div>
@@ -301,6 +317,7 @@ export function AppShell({
           </ShellOverlay>
         )}
       </div>
+    <InfoBulle />
     </ShellContext.Provider>
   );
 }

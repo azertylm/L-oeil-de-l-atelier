@@ -1,158 +1,84 @@
 import type { AlphaAppConfig, AlphaSite } from './config';
-import { IconStar } from './icons';
-import type { ShellConfig } from './pricing';
+import type { EcosystemApp } from './apps';
+import { useShell } from './ShellContext';
 
 interface EcosystemBarProps {
   app: AlphaAppConfig;
   sites: AlphaSite[];
-  maxSites: number;
   hubUrl: string;
-  config: ShellConfig;
-  /** Compteur affiché (l'app le fournit, ou calculé par la base depuis le registre). */
-  counter?: AlphaAppConfig['counter'];
-  onOpenPayment: () => void;
-  /** Ouvre le panneau « dons » de la base. */
-  onOpenDon: () => void;
-  /** Ouvre le panneau « applications de l'écosystème ». */
-  onOpenSites: () => void;
+  /** Applications du registre (pour retrouver les favoris). */
+  apps: EcosystemApp[];
 }
-
-const hosts = (url: string) => {
-  try {
-    return new URL(url).host;
-  } catch {
-    return url;
-  }
-};
 
 /**
  * Barre 1 — « écosystème ».
- * Logo alphabette.fr, dons, les 5 sites, compteur d'accès (cliquable : il ouvre
- * le registre des applications) et bouton Pass (résumé de l'offre + paiement).
  *
- * Clic fiable : la navigation reste dans le même onglet ; le site courant
- * n'est pas un lien (on y est déjà) ; une application « brouillon » ou sans
- * adresse affiche « bientôt en ligne » au lieu de mener à une page d'erreur.
+ * Volontairement courte pour ne jamais dépasser de l'écran, même sur téléphone :
+ *   [α alphabette]  [▦ toutes les applis] [🆕 nouveautés]  (favoris)  [S'abonner]
+ *
+ * · « alphabette » est écrit petit et ramène à www.alphabette.fr ;
+ * · chaque pictogramme affiche son nom au survol, au clavier et au doigt ;
+ * · les favoris (3 au maximum) apparaissent à partir de la tablette.
  */
-export function EcosystemBar({
-  app,
-  sites,
-  maxSites,
-  hubUrl,
-  config,
-  counter,
-  onOpenPayment,
-  onOpenDon,
-  onOpenSites,
-}: EcosystemBarProps) {
-  const visibleSites = sites.slice(0, maxSites);
+export function EcosystemBar({ app, hubUrl, apps }: EcosystemBarProps) {
+  const { t, favoris, nouveautesNonVues, openPanel, openPayment } = useShell();
+  const favorisApps = favoris
+    .map((cle) => apps.find((a) => a.key === cle))
+    .filter((a): a is EcosystemApp => Boolean(a));
 
   return (
     <div className="ab-eco">
-      <a className="ab-eco__brand" href={hubUrl} title="alphabette.fr — hub de l'écosystème">
-        <span className="ab-eco__brand-mark">α</span>
-        <span>ALPHABETTE</span>
+      <a
+        className="ab-eco__logo"
+        href={hubUrl.includes('alphabette') ? 'https://www.alphabette.fr' : hubUrl}
+        data-ab-tip={t('Aller sur alphabette.fr')}
+        aria-label={t('Aller sur alphabette.fr')}
+      >
+        <span className="ab-eco__brand-mark" aria-hidden="true">
+          α
+        </span>
+        <span>alphabette</span>
       </a>
 
-      <button type="button" className="ab-btn ab-btn--don" onClick={onOpenDon} title="Soutenir le projet">
-        ♥ DON
+      <button
+        type="button"
+        className="ab-eco__icone"
+        onClick={() => openPanel('sites')}
+        data-ab-tip={t('Toutes les applis')}
+        aria-label={t('Toutes les applis')}
+      >
+        ▦
       </button>
 
-      <nav className="ab-eco__sites" aria-label="Autres sites de l'écosystème">
-        {visibleSites.map((site) => {
-          const courant = site.key === app.key;
-          const horsLigne = Boolean(site.status && site.status !== 'actif');
+      <button
+        type="button"
+        className="ab-eco__icone"
+        onClick={() => openPanel('nouveautes')}
+        data-ab-tip={t('Nouveautés')}
+        aria-label={t('Nouveautés')}
+      >
+        🆕
+        {nouveautesNonVues > 0 && <span className="ab-eco__point" aria-hidden="true" />}
+      </button>
 
-          // Site courant : on y est déjà, ce n'est pas un lien.
-          if (courant) {
-            return (
-              <span key={site.key} className="ab-site ab-site--active" aria-current="page" title={`${site.label} — vous êtes ici`}>
-                {site.icon && <span aria-hidden="true">{site.icon}</span>}
-                <span>{site.label}</span>
-              </span>
-            );
-          }
-
-          // Pas encore en ligne : indisponible plutôt qu'un lien d'erreur.
-          if (!site.url || horsLigne) {
-            return (
-              <span key={site.key} className="ab-site ab-site--off" title={`${site.label} — bientôt en ligne`}>
-                {site.icon && <span aria-hidden="true">{site.icon}</span>}
-                <span>{site.label}</span>
-              </span>
-            );
-          }
-
-          return (
-            <a
-              key={site.key}
-              className="ab-site"
-              href={site.url}
-              title={`${site.label} — ${hosts(site.url)}`}
-            >
-              {site.icon && <span aria-hidden="true">{site.icon}</span>}
-              <span>{site.label}</span>
+      <nav className="ab-eco__favoris" aria-label={t('Mes favoris')}>
+        {favorisApps.map((fav) =>
+          fav.key === app.key || !fav.url ? (
+            <span key={fav.key} className="ab-site ab-site--active" aria-current={fav.key === app.key ? 'page' : undefined}>
+              ★ {fav.name}
+            </span>
+          ) : (
+            <a key={fav.key} className="ab-site" href={fav.url}>
+              ★ {fav.name}
             </a>
-          );
-        })}
+          ),
+        )}
       </nav>
 
       <div className="ab-eco__right">
-        {counter && (
-          <button
-            type="button"
-            className="ab-counter"
-            onClick={onOpenSites}
-            title={
-              app.gratuit
-                ? `${app.name} est gratuite. ${
-                    typeof counter.gratuites === 'number'
-                      ? `${counter.gratuites} des ${counter.total} applications de l'écosystème ${
-                          counter.gratuites > 1 ? 'sont gratuites' : 'est gratuite'
-                        }`
-                      : `Aucun prix, aucun essai, aucune carte bancaire`
-                  } — voir la liste.`
-                : "Voir les applications de l'écosystème"
-            }
-          >
-            <span>{app.gratuit ? 'gratuit' : `${counter.unlocked}/${counter.total}`}</span>
-            {app.gratuit ? (
-              typeof counter.gratuites === 'number' ? (
-                <span className="ab-counter__trial">
-                  ({counter.gratuites} sur {counter.total})
-                </span>
-              ) : null
-            ) : (
-              typeof counter.trialDaysLeft === 'number' &&
-              counter.trialDaysLeft > 0 && (
-                <span className="ab-counter__trial">({counter.trialDaysLeft} essai)</span>
-              )
-            )}
-          </button>
-        )}
-
-        {app.gratuit ? (
-          // Application gratuite : aucun prix affiché, mais la porte vers le hub
-          // reste là — c'est l'écosystème qui finance l'application.
-          <button
-            type="button"
-            className="ab-btn"
-            onClick={onOpenPayment}
-            title="Cette application est gratuite — découvrir l'écosystème alphabette.fr"
-          >
-            <span>🧭 L'écosystème</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="ab-btn ab-btn--pass"
-            onClick={onOpenPayment}
-            title={`Écosystème complet : ${config.ecosystemPerYear} € / an — voir l'offre`}
-          >
-            <IconStar width={14} height={14} />
-            <span>Pass {config.ecosystemPerYear} €/an</span>
-          </button>
-        )}
+        <button type="button" className="ab-abonner" onClick={openPayment}>
+          ⭐ {t('S’abonner')}
+        </button>
       </div>
     </div>
   );
