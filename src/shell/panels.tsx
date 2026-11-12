@@ -1,3 +1,4 @@
+import { ADRESSE_INSCRIPTION, LIBELLE_ROLE, dateLisible, lienInscription, lireMembre } from './membre';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useShell } from './ShellContext';
@@ -15,7 +16,7 @@ export type { ShellPanelId } from './config';
 import type { ShellPanelId } from './config';
 
 export const SHELL_PANELS: Record<ShellPanelId, { titre: string; sousTitre: string; icone: ReactNode }> = {
-  compte: { titre: 'Mon compte alphabette', sousTitre: 'Un seul compte pour tout l’écosystème', icone: '👤' },
+  compte: { titre: 'Mon inscription alphabette', sousTitre: 'Gratuite avec un code d’invitation, pour toutes les applications', icone: '👤' },
   cles: { titre: 'Clé d’API — IA souveraine', sousTitre: 'Mistral AI, hébergé en France', icone: '🔑' },
   pass: { titre: 'Le Pass alphabette', sousTitre: 'Débloquer les applications', icone: '⭐' },
   sites: { titre: 'Les applications de l’écosystème', sousTitre: 'Registre central alphabette.fr', icone: '🧭' },
@@ -50,9 +51,6 @@ export function infosPanneau(
   if (!app.gratuit) return base;
   if (id === 'pass') {
     return { ...base, icone: '🎁', titre: `${app.name} est gratuite`, sousTitre: 'Aucun prix, aucun essai, aucune carte bancaire' };
-  }
-  if (id === 'compte') {
-    return { ...base, sousTitre: `Gratuite pour toujours — un compte reste utile` };
   }
   return base;
 }
@@ -138,61 +136,64 @@ function LigneApp({ app, courant }: { app: EcosystemApp; courant: boolean }) {
   );
 }
 
-function PanneauCompte({ app, hubUrl, apps, ouvrir, basculer }: PanneauProps) {
-  const compte = app.accountUrl ?? `${hubUrl.replace(/\/$/, '')}/compte`;
-  const totalApplications = Math.max(apps.length, app.counter?.total ?? 0);
+function PanneauCompte({ apps, ouvrir, basculer }: PanneauProps) {
+  // Relue à chaque ouverture : l'inscription a pu être faite dans un autre onglet.
+  const membre = lireMembre();
+  const totalApplications = apps.length;
+  const allerA = (url: string) => {
+    try {
+      window.location.href = url;
+    } catch {
+      ouvrir(url);
+    }
+  };
+  if (membre) {
+    return (
+      <>
+        <div className="ab-panneau">
+          <h4>👤 {membre.prenom}</h4>
+          <p>
+            <strong>{LIBELLE_ROLE[membre.role] ?? 'Inscrit(e)'}</strong>
+            {membre.depuis ? <> · inscrit(e) le {dateLisible(membre.depuis)}</> : null}
+          </p>
+          <p>
+            Inscription gratuite, sur invitation : toutes les applications alphabette vous reconnaissent sur cet
+            appareil, et l’accès vous est offert.
+          </p>
+          <p className="ab-note">
+            Votre inscription est gardée dans ce navigateur, rien n’est envoyé à un serveur. Sur un autre téléphone ou
+            ordinateur, entrez à nouveau votre code sur alphabette.fr.
+          </p>
+        </div>
+        <div className="ab-actions-ligne">
+          <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" onClick={() => allerA(ADRESSE_INSCRIPTION)}>
+            Gérer mon inscription
+          </button>
+          <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => basculer('sites')}>
+            Voir {totalApplications > 1 ? `les ${totalApplications} applications` : 'les applications'}
+          </button>
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <div className="ab-panneau">
-        <h4>État du compte</h4>
+        <h4>Vous n’êtes pas encore inscrit(e)</h4>
         <p>
-          <span className={`ab-status ab-status--${app.accountState ?? 'ok'}`} style={{ display: 'inline-block', marginRight: 8 }} />
-          {ETAT[app.accountState ?? 'ok']} — synchronisé avec alphabette.fr.
+          L’inscription est <strong>gratuite avec un code d’invitation</strong>. Une fois inscrit(e), toutes les
+          applications alphabette vous reconnaissent sur cet appareil.
         </p>
-        <p className="ab-note">
-          Un seul compte, une seule facturation pour toutes les applications. Aucune publicité, aucune revente de
-          données, hébergement en France.
-        </p>
+        <p className="ab-note">Pas de code ? Les applications s’utilisent librement en attendant.</p>
       </div>
-
-      <div className="ab-panneau">
-        <h4>{app.gratuit ? 'Ce que ton compte apporte' : 'Ce que ton compte débloque'}</h4>
-        <p>
-          {app.gratuit ? (
-            <>
-              <strong>{app.name}</strong> est <strong>gratuite</strong> : il n’y a rien à débloquer. Le compte sert à
-              retrouver tes données sur tous tes appareils et à gérer les autres applications de l’écosystème.
-            </>
-          ) : app.counter ? (
-            <>
-              <strong>{app.counter.unlocked}</strong> application(s) débloquée(s) sur{' '}
-              <strong>{app.counter.total}</strong>.
-              {typeof app.counter.trialDaysLeft === 'number' && app.counter.trialDaysLeft > 0 && (
-                <> Il te reste <strong>{app.counter.trialDaysLeft} jour(s) d’essai</strong>.</>
-              )}
-            </>
-          ) : (
-            <>Le compte ouvre les applications débloquées.</>
-          )}
-        </p>
-      </div>
-
       <div className="ab-actions-ligne">
-        <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" onClick={() => ouvrir(compte)}>
-          Ouvrir mon espace compte <IconExternal width={14} height={14} />
+        <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" onClick={() => allerA(lienInscription())}>
+          🎟️ M’inscrire avec un code
         </button>
         <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => basculer('sites')}>
-          Voir les {totalApplications} application{totalApplications > 1 ? 's' : ''}
-        </button>
-        <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => basculer('pass')}>
-          {app.gratuit ? '🎁 Application gratuite' : '⭐ Le Pass'}
+          Voir les applications
         </button>
       </div>
-
-      <p className="ab-note">
-        Adresse de l’espace compte : <strong>{compte}</strong>. Une application peut remplacer ce panneau avec la prop{' '}
-        <code>onOpenAccount</code> de <code>&lt;AppShell&gt;</code>.
-      </p>
     </>
   );
 }
@@ -326,8 +327,31 @@ function PanneauPass(props: PanneauProps) {
   const { config, ouvrir, basculer } = props;
   const ouvert = paiementOuvert(config.paymentLinks.perApp) && paiementOuvert(config.paymentLinks.ecosystem);
   const promo = ouvert ? config.promotion : undefined;
+  const membre = lireMembre();
   return (
     <>
+      {membre ? (
+        <div className="ab-panneau">
+          <h4>🎟️ {membre.prenom}, votre accès est offert</h4>
+          <p>Vous êtes inscrit(e) avec un code d’invitation : vous n’avez rien à payer.</p>
+        </div>
+      ) : (
+        <div className="ab-panneau">
+          <h4>🎟️ Vous avez un code d’invitation ?</h4>
+          <p>L’inscription est alors gratuite, pour toutes les applications.</p>
+          <div className="ab-actions-ligne">
+            <button
+              type="button"
+              className="ab-btn ab-btn--accent ab-btn--lg"
+              onClick={() => {
+                window.location.href = lienInscription();
+              }}
+            >
+              M’inscrire avec mon code
+            </button>
+          </div>
+        </div>
+      )}
       {!ouvert && (
         <div className="ab-panneau">
           <h4>Le paiement en ligne n’est pas encore ouvert</h4>

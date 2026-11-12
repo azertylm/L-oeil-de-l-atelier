@@ -10,6 +10,7 @@ const EN: Record<string, string> = {
   'Toutes les applis': 'All apps',
   'Nouveautés': 'What’s new',
   'S’abonner': 'Subscribe',
+  'Mon inscription': 'My membership',
   'Faire un don': 'Donate',
   'Passer en mode nuit': 'Switch to night mode',
   'Passer en mode jour': 'Switch to day mode',

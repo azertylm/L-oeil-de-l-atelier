@@ -932,6 +932,16 @@ html[data-ab-theme='nuit'] .ab-don-carte > .ab-etiquette {
 }
 .ab-abonner:hover { background: color-mix(in oklab, var(--ab-pass) 88%, #000); }
 .ab-abonner:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* Inscrit : le prénom remplace « S'abonner » (pastille sobre, ne déborde pas). */
+.ab-abonner--membre {
+  background: color-mix(in oklab, var(--ab-pass) 22%, transparent);
+  color: inherit;
+  border: 1px solid color-mix(in oklab, var(--ab-pass) 70%, transparent);
+  max-width: 9.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ab-abonner--membre:hover { background: color-mix(in oklab, var(--ab-pass) 34%, transparent); }
 
 /* Barre 2 : boutons-pictogrammes. */
 .ab-pico {

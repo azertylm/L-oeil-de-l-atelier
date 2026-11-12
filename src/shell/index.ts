@@ -66,3 +66,13 @@ export {
 } from './config';
 export { lirePrefs, ecrirePrefs, type Prefs } from './prefs';
 export { type Langue } from './libelles';
+export {
+  lireMembre,
+  ecrireMembre,
+  oublierMembre,
+  lienInscription,
+  ADRESSE_INSCRIPTION,
+  LIBELLE_ROLE,
+  type Membre,
+  type RoleMembre,
+} from './membre';

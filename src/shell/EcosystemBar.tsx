@@ -1,6 +1,25 @@
+import { useEffect, useState } from 'react';
 import type { AlphaAppConfig, AlphaSite } from './config';
 import type { EcosystemApp } from './apps';
 import { useShell } from './ShellContext';
+import { lireMembre, type Membre } from './membre';
+
+/** L'inscription de ce navigateur, relue quand on revient sur l'onglet. */
+function useMembre(): Membre | null {
+  const [membre, setMembre] = useState<Membre | null>(() => lireMembre());
+  useEffect(() => {
+    const relire = () => setMembre(lireMembre());
+    window.addEventListener('focus', relire);
+    document.addEventListener('visibilitychange', relire);
+    window.addEventListener('alphabette:membre', relire);
+    return () => {
+      window.removeEventListener('focus', relire);
+      document.removeEventListener('visibilitychange', relire);
+      window.removeEventListener('alphabette:membre', relire);
+    };
+  }, []);
+  return membre;
+}
 
 interface EcosystemBarProps {
   app: AlphaAppConfig;
@@ -14,7 +33,7 @@ interface EcosystemBarProps {
  * Barre 1 — « écosystème ».
  *
  * Volontairement courte pour ne jamais dépasser de l'écran, même sur téléphone :
- *   [α alphabette]  [▦ toutes les applis] [🆕 nouveautés]  (favoris)  [S'abonner]
+ *   [α alphabette]  [▦ toutes les applis] [🆕 nouveautés]  (favoris)  [S'abonner | 👤 Prénom]
  *
  * · « alphabette » est écrit petit et ramène à www.alphabette.fr ;
  * · chaque pictogramme affiche son nom au survol, au clavier et au doigt ;
@@ -22,6 +41,7 @@ interface EcosystemBarProps {
  */
 export function EcosystemBar({ app, hubUrl, apps }: EcosystemBarProps) {
   const { t, favoris, nouveautesNonVues, openPanel, openPayment } = useShell();
+  const membre = useMembre();
   const favorisApps = favoris
     .map((cle) => apps.find((a) => a.key === cle))
     .filter((a): a is EcosystemApp => Boolean(a));
@@ -76,9 +96,21 @@ export function EcosystemBar({ app, hubUrl, apps }: EcosystemBarProps) {
       </nav>
 
       <div className="ab-eco__right">
-        <button type="button" className="ab-abonner" onClick={openPayment}>
-          ⭐ {t('S’abonner')}
-        </button>
+        {membre ? (
+          <button
+            type="button"
+            className="ab-abonner ab-abonner--membre"
+            onClick={() => openPanel('compte')}
+            data-ab-tip={t('Mon inscription')}
+            aria-label={`${t('Mon inscription')} : ${membre.prenom}`}
+          >
+            👤 {membre.prenom}
+          </button>
+        ) : (
+          <button type="button" className="ab-abonner" onClick={openPayment}>
+            ⭐ {t('S’abonner')}
+          </button>
+        )}
       </div>
     </div>
   );
