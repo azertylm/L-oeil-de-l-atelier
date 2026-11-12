@@ -105,9 +105,9 @@ export default function ShareModal({
 Je vous partage le lien vers L'Œil de l'Atelier : une plateforme innovante qui révolutionne les échanges entre artistes, galeries d'art et collectionneurs.
 
 Ce que la plateforme permet :
-1. Pour les GALERISTES & CURATEURS : Fiches techniques d'œuvres normalisées, dossiers de présentation clés en main, cotes justifiées et contrats de dépôt-consignation prêts à signer en 2 minutes (gain de 15h d'échanges par exposition).
+1. Pour les GALERISTES & CURATEURS : Fiches techniques d'œuvres normalisées, dossiers de présentation clés en main, cotes justifiées et contrats de dépôt-consignation à adapter et à faire relire avant signature.
 2. Pour les ARTISTES : Outils d'expertise IA, cartels muraux d'exposition prêts à imprimer avec QR codes et valorisation de démarche.
-3. Pour les VISITEURS & ACHETEURS : Audioguide au casque par QR code, livre d'or d'atelier, réservation d'œuvres et contrats d'achat direct avec Certificat d'Authenticité (COA) infalsifiable.
+3. Pour les VISITEURS & ACHETEURS : Audioguide au casque par QR code, livre d'or d'atelier, réservation d'œuvres et contrats d'achat direct avec Certificat d'Authenticité (COA).
 
 Accéder directement à l'espace :
 ${currentLink}
@@ -194,7 +194,7 @@ ${artistName}`;
             </div>
 
             <p className="text-xs sm:text-sm leading-relaxed opacity-90">
-              Dans le monde de l'art, les artistes et les galeristes perdent en moyenne <strong>15 à 20 heures</strong> en échanges chaotiques : formats de photos inadaptés, dimensions imprécises, textes de présentation à réécrire, cartels à bricoler manuellement et hésitations sur les cotes.
+              Dans le monde de l'art, les échanges entre artistes et galeristes sont souvent désordonnés : formats de photos inadaptés, dimensions imprécises, textes de présentation à réécrire, cartels à bricoler manuellement et hésitations sur les cotes.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
@@ -221,7 +221,7 @@ ${artistName}`;
                   <QrCode className="w-3.5 h-3.5" /> Pour le Visiteur
                 </div>
                 <p className="text-[11px] opacity-80 leading-relaxed">
-                  Scanne le cartel pour écouter l'audioguide, poser une option 48h discrète ou obtenir immédiatement son contrat d'achat et son certificat d'authenticité infalsifiable.
+                  Scanne le cartel pour écouter l'audioguide, poser une option 48h discrète ou obtenir immédiatement son contrat d'achat et son certificat d'authenticité.
                 </p>
               </div>
             </div>

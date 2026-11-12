@@ -105,13 +105,13 @@ export default function GalleryBridgeModal({
   const defaultDossierData = liveResults["gallery_portfolio"] || {
     titre_dossier: `DOSSIER CURATORIAL D'ARTISTE — ${profile.name ? profile.name.toUpperCase() : "PORTFOLIO D'ATELIER"}`,
     statement_curateur: `${profile.name || "L'artiste"} explore les tensions entre forme et impulsion. Chaque toile devient le lieu d'une rencontre physique avec la matière, où le geste capte l'indicible pour l'offrir au regard du spectateur dans un équilibre souverain.`,
-    biographie_pro: `${profile.name || "L'artiste"} vit et travaille en France. Diplômé(e) d'une formation artistique solide, ses œuvres ont fait l'objet d'acquisitions auprès de collectionneurs privés en Europe et font dialoguer tradition du geste pictural et abstraction contemporaine.`,
+    biographie_pro: `${profile.name || "L'artiste"} vit et travaille en France. ses œuvres font dialoguer tradition du geste pictural et abstraction contemporaine.`,
     grille_oeuvres_selectionnees: [
       { numero: "Œuvre 01", titre: "Résonance Première", dimension_conseillee: "120 x 100 cm", estimation_galerie: "2 200 € - 2 800 €", interet_curatorial: "Pièce maîtresse incarnant la rupture formelle et l'harmonie chromatique principale." },
       { numero: "Œuvre 02", titre: "Nocturne en Terre d'Ombre", dimension_conseillee: "90 x 90 cm", estimation_galerie: "1 700 € - 2 100 €", interet_curatorial: "Composition intimiste révélant la subtilité du travail sur les glacis et les ombres." },
       { numero: "Œuvre 03", titre: "Élévation Céleste", dimension_conseillee: "150 x 120 cm", estimation_galerie: "3 400 € - 4 200 €", interet_curatorial: "Grand format monumental conçu pour attirer le regard depuis la vitrine de la galerie." }
     ],
-    revue_presse_fictive: `« Une peinture de souffle et de silence, où chaque couche de pigment semble contenir un fragment de temps suspendu. Une voix artistique à suivre de très près. » — Revue Beaux-Arts & Regards`,
+    revue_presse_fictive: `Aucune revue de presse enregistrée. Ajoutez ici une citation réelle (journal, blog, catalogue) avec sa source : n'inventez pas d'avis.`,
     lettre_motivation_comite: `Au comité de sélection de la galerie,\n\nPar la présente, je soumets mon dossier artistique en vue d'une future collaboration ou d'une participation à vos expositions collectives. Ma démarche s'inscrit dans une recherche continue de maturité plastique.\n\nJe reste à votre entière disposition pour vous présenter les œuvres originales.`
   };
 
@@ -504,7 +504,7 @@ Pour l'Artiste :                                Pour la Galerie :
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-emerald-400 font-bold">✓</span>
-                      <span><strong>Contrat & Certificat COA :</strong> Cession légale CPI L. 111-1 et Certificat Décret n° 81-255 avec QR code de traçabilité infalsifiable.</span>
+                      <span><strong>Contrat & Certificat COA :</strong> Cession légale CPI L. 111-1 et Certificat Décret n° 81-255 avec QR code de traçabilité.</span>
                     </li>
                   </ul>
                 </div>

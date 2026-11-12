@@ -1247,7 +1247,7 @@ export default function QrSalesCartelModal({
                         </span>
                       </div>
                       <p className={`text-xs mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
-                        Générez immédiatement le Bon de Commande, le Contrat de Cession légal et le Certificat d'Authenticité (COA) infalsifiable Décret Marcus n° 81-255 avec QR code de vérification.
+                        Générez immédiatement le Bon de Commande, le Contrat de Cession légal et le Certificat d'Authenticité (COA) Décret Marcus n° 81-255 avec QR code de vérification.
                       </p>
                     </div>
                   </div>
@@ -1756,7 +1756,7 @@ export default function QrSalesCartelModal({
                       Achat Express • Contrat de Cession & Certificat d'Authenticité (COA)
                     </h3>
                     <p className={`text-xs sm:text-sm font-sans leading-relaxed ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
-                      Sécurisez immédiatement la vente d'une œuvre originale avec le collectionneur ou visiteur : contrat de cession complet préservant les droits d'auteur (CPI L. 111-1) et certificat d'authenticité de luxe avec QR code infalsifiable.
+                      Sécurisez immédiatement la vente d'une œuvre originale avec le collectionneur ou visiteur : contrat de cession complet préservant les droits d'auteur (CPI L. 111-1) et certificat d'authenticité de luxe avec QR code.
                     </p>
                   </div>
 
@@ -2195,7 +2195,7 @@ ${window.location.origin}${window.location.pathname}?verify=${certificateNumber}
                     <Sparkles className="w-4 h-4" /> 50 Innovations Stratégiques Tripartites
                   </h4>
                   <p className="text-xs opacity-75 mt-0.5">
-                    Découvrez les leviers qui fluidifient le travail de l'artiste, dynamisent la galerie et enchantent le visiteur.
+                    Pistes d'amélioration : ce sont des IDÉES, pas des fonctions toutes disponibles (paiement en ligne, audioguide vocal, etc. n'existent pas dans cette version). Seuls le cartel, le QR, le livre d'or, les impressions et le contrat existent vraiment.
                   </p>
                 </div>
 
@@ -2318,7 +2318,7 @@ ${window.location.origin}${window.location.pathname}?verify=${certificateNumber}
                           }}
                           className="text-[11px] font-mono text-[#c9a84c] hover:underline flex items-center gap-1 font-bold"
                         >
-                          Appliquer au Cartel <ArrowRight className="w-3 h-3" />
+                          Ouvrir l'onglet proche <ArrowRight className="w-3 h-3" />
                         </button>
                         <button
                           type="button"

@@ -31,13 +31,14 @@ if (STATIQUE) {
         try {
           corps = JSON.parse(String(init?.body || '{}'));
         } catch {}
-        const cle = lireEntete(init, 'x-gemini-api-key');
+        const cle =
+          lireEntete(init, 'x-gemini-api-key') || lireEntete(init, 'x-goog-api-key') || lireEntete(init, 'x-custom-api-key');
         if (!cle) {
           return json(
             {
               error: {
                 message:
-                  "Cette version de L'Œil de l'Atelier fonctionne sans serveur : renseignez votre clé API Gemini personnelle dans le Profil Artiste (gratuite sur aistudio.google.com).",
+                  "Ajoutez votre clé dans Clé API : ouvrez le Profil Artiste et collez votre clé Gemini personnelle (gratuite sur aistudio.google.com). Sans clé, aucune analyse n'est faite.",
               },
             },
             400,
