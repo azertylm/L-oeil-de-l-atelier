@@ -288,7 +288,7 @@ export default function ToolsBar({
                     </span>
                   </div>
                   <p className={`text-[11px] sm:text-xs font-sans mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
-                    Génération de cartels imprimables, audioguide IA voix vivante pour les visiteurs, et réservation discrète en salle.
+                    Génération de cartels imprimables, audioguide lu à voix haute par le téléphone du visiteur, et réservation discrète en salle.
                   </p>
                 </div>
               </div>

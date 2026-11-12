@@ -301,7 +301,7 @@ export default function ExplanationSection({
                       </span>
                     </div>
                     <p className={`text-xs font-sans mt-0.5 ${isDark ? "text-neutral-300" : "text-stone-700"}`}>
-                      Impression de cartels muraux normalisés avec QR codes, audioguide vocal immersif pour les visiteurs, livre d'or d'exposition et passerelle de vente directe discrète.
+                      Impression de cartels muraux normalisés avec QR codes, audioguide lu à voix haute par le téléphone du visiteur, livre d'or d'exposition et passerelle de vente directe discrète.
                     </p>
                   </div>
                 </div>
