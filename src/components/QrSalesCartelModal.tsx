@@ -320,6 +320,15 @@ export default function QrSalesCartelModal({
       ? (lienWhatsapp || lienEmail || publicShareUrl)
       : (lienEmail || lienWhatsapp || publicShareUrl);
 
+  // Ce que le visiteur obtient vraiment en scannant (le QR n'ouvre pas d'audioguide).
+  const legendeQr = qrPayload.startsWith("mailto:")
+    ? "Scanner pour écrire à l'artiste"
+    : qrPayload.startsWith("https://wa.me/")
+      ? "Scanner pour écrire sur WhatsApp"
+      : qrDestination === "payment_link" && customPaymentUrl.trim()
+        ? "Scanner pour réserver ou payer"
+        : "Scanner pour en savoir plus";
+
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -1681,8 +1690,7 @@ export default function QrSalesCartelModal({
 
                     <div className="mt-4 pt-3 border-t border-stone-300 flex items-center justify-between">
                       <div className="text-[9px] font-mono text-stone-600">
-                        <p>Scanner pour écouter l'audioguide</p>
-                        <p className="text-stone-400">Option de réservation directe</p>
+                        <p>{legendeQr}</p>
                       </div>
                       <QRCodeSVG value={qrPayload} size={70} level="M" />
                     </div>
@@ -1719,8 +1727,7 @@ export default function QrSalesCartelModal({
 
                     <div className="mt-4 pt-3 border-t border-stone-300 flex items-center justify-between">
                       <div className="text-[9px] font-mono text-stone-600">
-                        <p>Scanner pour écouter l'audioguide</p>
-                        <p className="text-stone-400">Option de réservation directe</p>
+                        <p>{legendeQr}</p>
                       </div>
                       <QRCodeSVG value={qrPayload} size={70} level="M" />
                     </div>

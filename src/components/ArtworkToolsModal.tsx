@@ -8,7 +8,7 @@ import {
   Sparkles, X, CheckCircle2, Play, Search,
   Palette, Layers, Feather, Compass, DollarSign,
   Award, Home, Type, Library, FileText, Wine,
-  Share2, Scroll, Zap, PenTool, Tag, QrCode
+  Share2, Scroll, Zap, PenTool, Tag, QrCode, Printer
 } from "lucide-react";
 import { TOOLS, CATEGORIES } from "../data.js";
 import { Tool } from "../types.js";
@@ -23,6 +23,7 @@ interface ArtworkToolsModalProps {
   onRunAllAnalyses?: () => void;
   onOpenGlobalReport?: () => void;
   onOpenQrSalesModal?: () => void;
+  onOpenCartelExpo?: () => void;
   isSubscribed?: boolean;
   hasArtwork?: boolean;
   onOpenSubscriptionModal?: () => void;
@@ -59,7 +60,8 @@ export default function ArtworkToolsModal({
   hasArtwork,
   onOpenSubscriptionModal,
   onOpenGlobalReport,
-  onOpenQrSalesModal
+  onOpenQrSalesModal,
+  onOpenCartelExpo
 }: ArtworkToolsModalProps) {
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -107,6 +109,21 @@ export default function ArtworkToolsModal({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {onOpenCartelExpo && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenCartelExpo();
+                  onClose();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] border border-[#c9a84c] text-[#c9a84c] hover:bg-[#c9a84c] hover:text-black font-mono font-bold text-xs uppercase tracking-wider cursor-pointer transition-all"
+                title="Cartel d'exposition imprimable avec QR code"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Cartel d'expo</span>
+              </button>
+            )}
+
             {onOpenQrSalesModal && (
               <button
                 type="button"

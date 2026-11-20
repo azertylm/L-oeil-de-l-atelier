@@ -32,6 +32,7 @@ import ArtworkToolsModal from "./components/ArtworkToolsModal.js";
 import AddFromGalleryModal from "./components/AddFromGalleryModal.js";
 import GlobalReportExportModal from "./components/GlobalReportExportModal.js";
 import QrSalesCartelModal from "./components/QrSalesCartelModal.js";
+import CartelExpoModal from "./components/CartelExpoModal.js";
 import ShareModal, { ShareRole } from "./components/ShareModal.js";
 import TopExplanationTab from "./components/TopExplanationTab.js";
 import ExplanationSection from "./components/ExplanationSection.js";
@@ -165,6 +166,7 @@ export default function App() {
   const [isAddFromGalleryOpen, setIsAddFromGalleryOpen] = useState<boolean>(false);
   const [isGlobalReportModalOpen, setIsGlobalReportModalOpen] = useState<boolean>(false);
   const [isQrSalesModalOpen, setIsQrSalesModalOpen] = useState<boolean>(false);
+  const [isCartelExpoOpen, setIsCartelExpoOpen] = useState<boolean>(false);
   const [qrSalesInitialTab, setQrSalesInitialTab] = useState<"generator" | "visitor_preview" | "guestbook" | "fifty_ideas" | "print_cartels" | "contract_coa">("generator");
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [shareRole, setShareRole] = useState<ShareRole>("all");
@@ -1486,6 +1488,18 @@ export default function App() {
                   >
                     <span>{t("cartels_full_btn", "🏷️ Cartels Muraux, QR & Livre d'Or")}</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCartelExpoOpen(true)}
+                    className={`px-3.5 py-1.5 min-h-[44px] text-xs font-mono font-bold uppercase border transition-all flex items-center gap-1.5 ${
+                      theme === "dark-gold"
+                        ? "bg-black/60 text-[#e8d9a8] border-[#c9a84c]/50 hover:bg-[#c9a84c] hover:text-black"
+                        : "bg-white text-amber-900 border-amber-300 hover:bg-[#c9a84c] hover:text-black"
+                    }`}
+                  >
+                    <span>🖨️ Cartel d'expo imprimable</span>
+                  </button>
                 </div>
               </div>
 
@@ -2370,6 +2384,7 @@ export default function App() {
         onOpenSubscriptionModal={() => setIsSubscriptionModalOpen(true)}
         onOpenGlobalReport={() => setIsGlobalReportModalOpen(true)}
         onOpenQrSalesModal={() => setIsQrSalesModalOpen(true)}
+        onOpenCartelExpo={() => setIsCartelExpoOpen(true)}
       />
 
       {/* Artist Profile Modal */}
@@ -2418,6 +2433,18 @@ export default function App() {
           setIsShareModalOpen(true);
         }}
         initialTab={qrSalesInitialTab}
+      />
+
+      <CartelExpoModal
+        isOpen={isCartelExpoOpen}
+        onClose={() => setIsCartelExpoOpen(false)}
+        theme={theme}
+        artiste={profile.name}
+        titre={selectedArtwork?.title || saveTitle || (activeSeries.length > 0 ? activeSeries[0].title : "")}
+        annee={selectedArtwork?.year || saveYear || ""}
+        technique={selectedArtwork?.medium || saveMedium || ""}
+        dimensions={(selectedArtwork && 'dimensions' in selectedArtwork) ? String(selectedArtwork.dimensions ?? '') : ""}
+        lienParDefaut={profile.web}
       />
 
       {/* Modal pour ajouter facilement des photos déjà importées à la série */}
