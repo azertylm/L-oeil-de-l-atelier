@@ -188,3 +188,22 @@ Structure d'une application :
 
 Aperçu vivant de la base : http://localhost:3000/base
 Hub : https://alphabette.fr — Documentation : docs/base-application.md
+
+## Voix Alphabette (obligatoire) — Une seule voix Alphabette, partout
+
+Toute lecture à voix haute passe par le **lecteur unique** de la base
+(`alphabetteAudio`, `packages/shell/src/audio/`) : même voix Google Gemini
+**« Kore »** dans toutes les applications (barre, boutons « Écouter », fiches,
+résultats, questions, chapitres, favoris).
+
+- Bouton : `<BoutonEcouter texte={…} id="fiche-12" />` ou `<BoutonEcouter cible="#resultat" />`
+  — sans React : `<button data-ab-ecouter="Texte">` / `data-ab-ecouter-cible="#bloc"`.
+  Trois états : « Écouter » → « Préparation... » (annulable) → « Arrêter » (vert).
+- Ne jamais appeler `speechSynthesis` ni recréer un lecteur : les anciens appels
+  `speechSynthesis.speak()` sont de toute façon redirigés vers la voix Alphabette.
+- Le haut-parleur de la barre arrête toute lecture en cours, où qu'elle soit.
+- Serveur : `POST /api/alphabette/tts` et `/api/alphabette/transcribe`
+  (`server/alphabetteAudio.ts`, clé `GEMINI_API_KEY` côté serveur, `apiVersion: v1beta`).
+  Site statique : clé Gemini du visiteur, sinon voix du téléphone (fr-FR, 0,94).
+- Micro : `demarrerDictee()` (SpeechRecognition fr-FR → MediaRecorder + transcription Gemini).
+- Mettre une application existante à jour : `bun run sync:shell <dossier-app>`.

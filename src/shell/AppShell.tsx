@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties, type Rea
 import { AppHeader } from './AppHeader';
 import { EcosystemBar } from './EcosystemBar';
 import { InfoBulle } from './InfoBulle';
+import { installerAudioAlphabette } from './audio/passerelle';
 import { plateforme, useFavoris, useInstallation, useLangue, useLectureVocale, useModeSimple, useNouveautes } from './outils';
 import { loadEcosystemRegistry, synchroniserSites, type EcosystemApp, type RegistreApps } from './apps';
 import type { AlphaAppConfig, AlphaSite, ShellPanelId } from './config';
@@ -89,6 +90,7 @@ export function AppShell({
   const { favoris, basculer: basculerFavori } = useFavoris();
   const { simple, basculer: basculerSimple } = useModeSimple();
   const lecture = useLectureVocale(langue);
+  useEffect(() => installerAudioAlphabette(), []);
   const installation = useInstallation();
   const [remoteConfig, setRemoteConfig] = useState<ShellConfig>(config ?? FALLBACK_CONFIG);
   const [panel, setPanel] = useState<ShellPanelId | null>(null);

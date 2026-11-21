@@ -322,6 +322,9 @@ export function paiementOuvert(lien: string | undefined): boolean {
   return Boolean(lien) && /^https:\/\/buy\.stripe\.com\/[A-Za-z0-9]+$/.test(lien as string) && !/alphabette/i.test(lien as string);
 }
 
+/** Page des offres du Laboratoire : Pass Cadeau (carte imprimable), Pass Découverte 48 h, code cadeau. */
+const LIEN_CADEAU = 'https://alphabette.eu/pass/#cadeau';
+
 function PanneauPass(props: PanneauProps) {
   if (props.app.gratuit) return <PanneauGratuit {...props} />;
   const { config, ouvrir, basculer } = props;
@@ -429,7 +432,15 @@ function PanneauPass(props: PanneauProps) {
         </button>
       </div>
 
-      {ouvert && <p className="ab-note">Paiement sécurisé par Stripe.</p>}
+      {ouvert && (
+        <div className="ab-actions-ligne">
+          <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => ouvrir(LIEN_CADEAU)}>
+            🎁 Offrir en cadeau
+          </button>
+        </div>
+      )}
+
+      {ouvert && <p className="ab-note">Paiement sécurisé par Stripe. 12 mois, aucun renouvellement automatique.</p>}
     </>
   );
 }

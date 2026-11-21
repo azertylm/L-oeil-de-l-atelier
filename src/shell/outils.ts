@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { alphabetteAudio, ID_BARRE } from './audio/alphabetteAudio';
+import { texteDeLElement } from './audio/BoutonEcouter';
 import type { EcosystemApp } from './apps';
 import { traduire, type Langue } from './libelles';
 import { ecrirePrefs, lirePrefs } from './prefs';
@@ -71,63 +73,26 @@ export function useModeSimple() {
 
 /* -------------------------------------------------- Lecture à voix haute */
 
-/** Découpe un texte en phrases courtes : certains navigateurs coupent la voix après ~15 secondes. */
-function decouper(texte: string): string[] {
-  const phrases = texte.replace(/\s+/g, ' ').match(/[^.!?…:;]+[.!?…:;]?\s*/g) ?? [texte];
-  const morceaux: string[] = [];
-  for (const phrase of phrases) {
-    let reste = phrase.trim();
-    while (reste.length > 200) {
-      const coupe = reste.lastIndexOf(' ', 200);
-      morceaux.push(reste.slice(0, coupe > 40 ? coupe : 200));
-      reste = reste.slice(coupe > 40 ? coupe : 200).trim();
-    }
-    if (reste) morceaux.push(reste);
-  }
-  return morceaux;
-}
-
-/** Lit à voix haute le texte visible de la page (hors barres), avec la voix du téléphone. */
+/**
+ * Bouton haut-parleur de la barre : lit le texte visible de la page (hors barres) avec la voix
+ * Alphabette unique (Gemini « Kore », repli voix du téléphone). Si une lecture ou une préparation
+ * est en cours n'importe où sur l'écran, un clic l'arrête immédiatement.
+ */
 export function useLectureVocale(langue: Langue) {
-  const possible = typeof window !== 'undefined' && 'speechSynthesis' in window;
-  const [enCours, setEnCours] = useState(false);
-  const jeton = useRef(0);
-
-  const arreter = useCallback(() => {
-    jeton.current++;
-    if (possible) window.speechSynthesis.cancel();
-    setEnCours(false);
-  }, [possible]);
-
-  const lire = useCallback(() => {
-    if (!possible) return;
+  const etat = useSyncExternalStore(alphabetteAudio.abonner, alphabetteAudio.lireEtat, alphabetteAudio.lireEtat);
+  const basculer = useCallback(() => {
+    if (alphabetteAudio.actif) return alphabetteAudio.stop();
     const zone = (document.querySelector('.ab-content') ?? document.querySelector('main') ?? document.body) as HTMLElement;
-    const texte = (zone.innerText || '').slice(0, 30000);
-    const phrases = decouper(texte);
-    if (!phrases.length) return;
-    window.speechSynthesis.cancel();
-    const moi = ++jeton.current;
-    setEnCours(true);
-    const suivante = (i: number) => {
-      if (jeton.current !== moi) return;
-      if (i >= phrases.length) return setEnCours(false);
-      const u = new SpeechSynthesisUtterance(phrases[i]);
-      u.lang = langue === 'en' ? 'en-GB' : 'fr-FR';
-      u.rate = 0.95;
-      u.onend = () => suivante(i + 1);
-      u.onerror = () => {
-        if (jeton.current === moi) setEnCours(false);
-      };
-      window.speechSynthesis.speak(u);
-    };
-    suivante(0);
-  }, [possible, langue]);
-
-  useEffect(() => () => {
-    if (possible) window.speechSynthesis.cancel();
-  }, [possible]);
-
-  return { possible, enCours, basculer: enCours ? arreter : lire };
+    const texte = texteDeLElement(zone).slice(0, 30000);
+    alphabetteAudio.play(texte, ID_BARRE, { langue });
+  }, [langue]);
+  useEffect(() => () => alphabetteAudio.stop(), []);
+  return {
+    possible: typeof window !== 'undefined',
+    enCours: etat.etat !== 'repos',
+    preparation: etat.etat === 'preparation',
+    basculer,
+  };
 }
 
 /* -------------------------------------------------------------- Installer */

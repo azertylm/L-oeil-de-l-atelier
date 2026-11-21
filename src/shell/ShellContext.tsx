@@ -51,7 +51,8 @@ export interface ShellContextValue {
   marquerNouveautesVues: () => void;
   simple: boolean;
   basculerSimple: () => void;
-  lecture: { possible: boolean; enCours: boolean; basculer: () => void };
+  /** Lecture à voix haute (lecteur audio unique Alphabette). */
+  lecture: { possible: boolean; enCours: boolean; preparation: boolean; basculer: () => void };
   installation: { installee: boolean; directe: boolean; installer: () => Promise<boolean>; plateforme: Plateforme };
   /** Ouvre le courrier pour donner son avis sur l'application. */
   donnerAvis: () => void;

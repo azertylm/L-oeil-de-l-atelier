@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AlphaAppConfig } from './config';
 import { DENSITY_LABELS, DENSITY_ORDER } from './hooks';
 import { useShell } from './ShellContext';
+import { IconeAudio } from './audio/BoutonEcouter';
 
 interface AppHeaderProps {
   app: AlphaAppConfig;
@@ -117,12 +118,13 @@ export function AppHeader({ app, onToggleNav }: AppHeaderProps) {
         {sh.lecture.possible && (
           <button
             type="button"
-            className={`ab-pico${sh.lecture.enCours ? ' ab-pico--actif' : ''}`}
+            className={`ab-pico ab-pico--audio${sh.lecture.enCours ? ' ab-pico--actif' : ''}`}
             onClick={sh.lecture.basculer}
-            data-ab-tip={sh.lecture.enCours ? t('Arrêter la lecture') : t('Lire à voix haute')}
-            aria-label={sh.lecture.enCours ? t('Arrêter la lecture') : t('Lire à voix haute')}
+            aria-busy={sh.lecture.preparation}
+            data-ab-tip={sh.lecture.preparation ? t('Préparation... (toucher pour annuler)') : sh.lecture.enCours ? t('Arrêter la lecture') : t('Lire à voix haute')}
+            aria-label={sh.lecture.preparation ? t('Préparation... (toucher pour annuler)') : sh.lecture.enCours ? t('Arrêter la lecture') : t('Lire à voix haute')}
           >
-            {sh.lecture.enCours ? '⏹️' : '🔊'}
+            <IconeAudio etat={sh.lecture.preparation ? 'preparation' : sh.lecture.enCours ? 'lecture' : 'repos'} taille={18} />
           </button>
         )}
 
