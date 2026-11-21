@@ -3,16 +3,16 @@
  * Bibliothèque de voix Alphabette, GRATUITE et SANS SERVEUR.
  *
  * Les textes fixes des applis (page lue par le haut-parleur, boutons « Écouter », fichiers
- * voix-textes.json) sont enregistrés à l'avance avec la vraie voix Gemini « Kore » par une tâche
- * GitHub (scripts/voix/generer-bibliotheque.mjs, quota gratuit de Google), puis publiés en MP3 sur
- * https://alphabette.fr/voix/. Le navigateur n'a plus qu'à lire un fichier : aucun serveur, aucune
+ * voix-textes.json) sont enregistrés à l'avance par une tâche GitHub gratuite
+ * (scripts/voix/generer-bibliotheque.ts) : voix Gemini « Kore » quand une clé Gemini gratuite et
+ * son quota le permettent, sinon voix neuronale libre Piper « Siwis » (CC BY 4.0) ; publiés en MP3
+ * sur https://alphabette.fr/voix/. Le navigateur n'a plus qu'à lire un fichier : aucun serveur, aucune
  * clé, démarrage immédiat, la même voix pour tout le monde.
  *
  * L'index est un petit script (voix/index.js) : il se charge depuis n'importe quel sous-domaine
  * sans réglage CORS. Les MP3 se lisent avec un simple <audio>, lui aussi sans CORS.
  */
 import { preparerTexte } from './preparerTexte';
-import { MODELE_TTS, VOIX_ALPHABETTE } from './voixGemini';
 
 declare global {
   interface Window {
@@ -35,7 +35,9 @@ export function urlBibliotheque(): string {
 
 /** Empreinte courte et stable d'un texte préparé (identique dans le navigateur et dans Node). */
 export function empreinteVoix(textePrepare: string): string {
-  const s = `${VERSION_BIBLIOTHEQUE}|${VOIX_ALPHABETTE}|${MODELE_TTS}|${textePrepare}`;
+  // La voix n'entre pas dans l'empreinte : un enregistrement peut passer de la voix libre à « Kore »
+  // sans changer d'adresse.
+  const s = `${VERSION_BIBLIOTHEQUE}|${textePrepare}`;
   let h1 = 0xdeadbeef ^ s.length;
   let h2 = 0x41c6ce57 ^ s.length;
   for (let i = 0; i < s.length; i++) {
