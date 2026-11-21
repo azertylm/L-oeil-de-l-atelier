@@ -6,15 +6,18 @@
  *   alphabetteAudio.basculer(texte, 'fiche-12');   // dans un gestionnaire de clic
  *   alphabetteAudio.stop();
  *
- * Source de la voix, dans l'ordre :
- *   1. route serveur POST /api/alphabette/tts (clé Gemini côté serveur, jamais dans le navigateur) ;
- *   2. site statique : clé Gemini du visiteur (réglages IA de la base), appel direct à Google ;
- *   3. voix du téléphone (speechSynthesis fr-FR, vitesse 0,94, voix Google en priorité).
+ * Source de la voix, dans l'ordre (tout est gratuit, aucun serveur n'est nécessaire) :
+ *   1. bibliothèque Alphabette : texte déjà enregistré en voix « Kore » (MP3 sur alphabette.fr/voix/) ;
+ *   2. route serveur POST /api/alphabette/tts, si un jour un serveur existe ;
+ *   3. clé Gemini du visiteur (réglages IA de la base), appel direct à Google, gardé en cache ;
+ *   4. meilleure voix de l'appareil (voix naturelles / Google / Microsoft / Apple en priorité, fr-FR, 0,94).
  * Lecture : AudioContext sans blanc entre les morceaux → sinon <audio> (Blob WAV) → sinon voix du téléphone.
  */
 import { lireChaineIA } from '../ia/routeurByok';
 import { morceauxAPrononcer } from './preparerTexte';
 import { base64VersOctets, garantirWav, ttsGeminiDirect } from './voixGemini';
+import { chargerIndexBibliotheque, empreinteVoix, enregistrementsDisponibles } from './bibliotheque';
+import { preparerTexte } from './preparerTexte';
 
 export type EtatAudio = 'repos' | 'preparation' | 'lecture';
 export interface InstantaneAudio {
@@ -57,6 +60,13 @@ class LecteurAlphabette {
   private abonnes = new Set<() => void>();
   private instantane: InstantaneAudio = { etat: 'repos', proprietaire: null };
   private serveurAbsent = false;
+  constructor() {
+    if (typeof window !== 'undefined') {
+      void chargerIndexBibliotheque();
+      // Site statique (OVH) : pas de route serveur. On ne la tente que si une page la déclare.
+      this.serveurAbsent = !window.ALPHABETTE_TTS_URL && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+    }
+  }
   /** Fonctions d'origine de speechSynthesis (la passerelle peut les remplacer). */
   speakOrigine: ((u: SpeechSynthesisUtterance) => void) | null = null;
   cancelOrigine: (() => void) | null = null;
@@ -106,6 +116,24 @@ class LecteurAlphabette {
     }
     this.controleur = new AbortController();
     this.poser('preparation', id);
+
+    // 1. Déjà enregistré dans la bibliothèque : lecture immédiate du MP3 (élément créé dans le clic).
+    const enregistrements = enregistrementsDisponibles(texte);
+    if (enregistrements) {
+      void this.jouerBibliotheque(session, id, enregistrements, morceaux, options);
+      return;
+    }
+    // 2-3. Ni serveur ni clé : inutile d'attendre, la voix de l'appareil démarre tout de suite.
+    if (this.serveurAbsent && !this.cleGemini()) {
+      this.poser('lecture', id);
+      options.onDebut?.();
+      void this.parlerTelephone(morceaux, session, options.langue).then(() => {
+        if (session !== this.sessionId) return;
+        this.poser('repos', null);
+        options.onFin?.();
+      });
+      return;
+    }
     void this.derouler(session, id, morceaux, this.controleur.signal, options);
   }
 
@@ -208,11 +236,17 @@ class LecteurAlphabette {
         signal.removeEventListener('abort', relais);
       }
     }
+    const garde = await this.cacheDurable(texte);
+    if (garde) {
+      this.memoriser(texte, garde);
+      return { octets: garde, source: 'cle' };
+    }
     const cle = this.cleGemini();
     if (cle) {
       const octets = await ttsGeminiDirect(texte, cle, signal);
       if (octets) {
         this.memoriser(texte, octets);
+        void this.cacheDurable(texte, octets);
         return { octets, source: 'cle' };
       }
     }
@@ -291,6 +325,57 @@ class LecteurAlphabette {
     }
   }
 
+  /** Lecture des enregistrements de la bibliothèque, l'un après l'autre (repli : voix générée). */
+  private jouerBibliotheque(session: number, id: string, urls: string[], morceaux: string[], o: OptionsLecture) {
+    const a = new Audio();
+    a.preload = 'auto';
+    this.elementAudio = a;
+    let i = 0;
+    const vivant = () => session === this.sessionId;
+    const repli = () => {
+      if (!vivant()) return;
+      this.elementAudio = null;
+      void this.derouler(session, id, morceaux, this.controleur?.signal ?? new AbortController().signal, o);
+    };
+    const suivant = () => {
+      if (!vivant()) return;
+      if (i >= urls.length) {
+        this.elementAudio = null;
+        this.poser('repos', null);
+        o.onFin?.();
+        return;
+      }
+      a.src = urls[i++];
+      a.play().then(() => {
+        if (!vivant()) return;
+        if (this.instantane.etat !== 'lecture') {
+          this.poser('lecture', id);
+          o.onDebut?.();
+        }
+      }).catch(() => (i === 1 ? repli() : suivant()));
+    };
+    a.onended = suivant;
+    a.onerror = () => (i === 1 ? repli() : suivant());
+    suivant(); // appelé dans le clic : autorisé sur iOS
+  }
+
+  /** Cache durable (Cache Storage) des voix générées avec la clé du visiteur : son quota est préservé. */
+  private async cacheDurable(texte: string, octets?: Uint8Array): Promise<Uint8Array | null> {
+    try {
+      if (typeof caches === 'undefined') return null;
+      const c = await caches.open('ab-voix-v1');
+      const cle = `https://ab-voix.local/${empreinteVoix(preparerTexte(texte))}`;
+      if (octets) {
+        await c.put(cle, new Response(octets.slice().buffer, { headers: { 'Content-Type': 'audio/wav' } }));
+        return octets;
+      }
+      const r = await c.match(cle);
+      return r ? new Uint8Array(await r.arrayBuffer()) : null;
+    } catch {
+      return null;
+    }
+  }
+
   private attendre(ms: number, session: number) {
     return new Promise<void>((ok) => {
       if (ms <= 0) return ok();
@@ -344,12 +429,11 @@ class LecteurAlphabette {
       const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined;
       if (!synth) return fin();
       const code = langue === 'en' ? 'en-GB' : 'fr-FR';
-      const voix = synth.getVoices().filter((v) => v.lang?.toLowerCase().startsWith(code.slice(0, 2)));
-      const choisie =
-        voix.find((v) => /google/i.test(v.name) && v.lang === code) ??
-        voix.find((v) => /google/i.test(v.name)) ??
-        voix.find((v) => v.lang === code) ??
-        voix[0];
+      let choisie = meilleureVoix(synth.getVoices(), code);
+      if (!choisie) {
+        // Chrome charge la liste des voix après coup : on la redemande au premier mot.
+        synth.addEventListener?.('voiceschanged', () => (choisie = meilleureVoix(synth.getVoices(), code)), { once: true });
+      }
       const parler = this.speakOrigine ?? ((u: SpeechSynthesisUtterance) => synth.speak(u));
       const suivant = (i: number) => {
         if (session !== this.sessionId || i >= morceaux.length) return fin();
@@ -357,7 +441,8 @@ class LecteurAlphabette {
         u.__ab = true;
         u.lang = code;
         u.rate = 0.94;
-        if (choisie) u.voice = choisie;
+        const v = choisie ?? meilleureVoix(synth.getVoices(), code);
+        if (v) u.voice = v;
         u.onend = () => suivant(i + 1);
         u.onerror = () => fin();
         parler(u);
@@ -369,3 +454,27 @@ class LecteurAlphabette {
 
 /** Le lecteur unique, partagé par toute l'application (et la barre). */
 export const alphabetteAudio = new LecteurAlphabette();
+
+/**
+ * Choisit la plus belle voix de l'appareil, toujours la même sur un appareil donné :
+ * voix « naturelles » (Microsoft Online Natural, Apple Premium/Enhanced, Google réseau) d'abord,
+ * voix féminine de préférence (plus proche de « Kore »), voix robotiques (eSpeak) en dernier.
+ */
+export function meilleureVoix(voix: SpeechSynthesisVoice[], code = 'fr-FR'): SpeechSynthesisVoice | undefined {
+  const langue = code.slice(0, 2).toLowerCase();
+  const note = (v: SpeechSynthesisVoice) => {
+    const n = `${v.name} ${v.voiceURI}`.toLowerCase();
+    let s = 0;
+    if (v.lang?.replace('_', '-').toLowerCase() === code.toLowerCase()) s += 20;
+    if (/natural|neural|online/.test(n)) s += 60; // Microsoft Edge / Windows 11
+    if (/premium|enhanced|améliorée|amelioree/.test(n)) s += 55; // Apple
+    if (/google/.test(n)) s += 45; // Chrome / Android (voix réseau)
+    if (/denise|vivienne|eloise|brigitte|amélie|amelie|audrey|aurélie|aurelie|marie|julie|léa|lea|virginie|celine|céline|female|femme/.test(n)) s += 8;
+    if (/espeak|mbrola|pico|robot/.test(n)) s -= 50;
+    if (!v.localService) s += 3; // voix en ligne, souvent meilleures
+    return s;
+  };
+  return voix
+    .filter((v) => v.lang?.toLowerCase().startsWith(langue))
+    .sort((a, b) => note(b) - note(a) || a.name.localeCompare(b.name))[0];
+}

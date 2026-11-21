@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { alphabetteAudio, ID_BARRE } from './audio/alphabetteAudio';
-import { texteDeLElement } from './audio/BoutonEcouter';
+import { texteDeLaPage } from './audio/BoutonEcouter';
 import type { EcosystemApp } from './apps';
 import { traduire, type Langue } from './libelles';
 import { ecrirePrefs, lirePrefs } from './prefs';
@@ -82,9 +82,7 @@ export function useLectureVocale(langue: Langue) {
   const etat = useSyncExternalStore(alphabetteAudio.abonner, alphabetteAudio.lireEtat, alphabetteAudio.lireEtat);
   const basculer = useCallback(() => {
     if (alphabetteAudio.actif) return alphabetteAudio.stop();
-    const zone = (document.querySelector('.ab-content') ?? document.querySelector('main') ?? document.body) as HTMLElement;
-    const texte = texteDeLElement(zone).slice(0, 30000);
-    alphabetteAudio.play(texte, ID_BARRE, { langue });
+    alphabetteAudio.play(texteDeLaPage(), ID_BARRE, { langue });
   }, [langue]);
   useEffect(() => () => alphabetteAudio.stop(), []);
   return {

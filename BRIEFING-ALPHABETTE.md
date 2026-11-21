@@ -189,21 +189,28 @@ Structure d'une application :
 Aperçu vivant de la base : http://localhost:3000/base
 Hub : https://alphabette.fr — Documentation : docs/base-application.md
 
-## Voix Alphabette (obligatoire) — Une seule voix Alphabette, partout
+## Voix Alphabette (obligatoire) — Une seule voix Alphabette, partout (gratuite, sans serveur)
 
 Toute lecture à voix haute passe par le **lecteur unique** de la base
-(`alphabetteAudio`, `packages/shell/src/audio/`) : même voix Google Gemini
-**« Kore »** dans toutes les applications (barre, boutons « Écouter », fiches,
-résultats, questions, chapitres, favoris).
+(`alphabetteAudio`, `packages/shell/src/audio/`). Jamais de `speechSynthesis` en
+direct, jamais un autre lecteur : les anciens appels `speechSynthesis.speak()`
+sont de toute façon redirigés vers lui.
 
+D'où vient la voix (tout est gratuit) :
+1. **Bibliothèque Alphabette** : les textes fixes sont enregistrés à l'avance en
+   voix Gemini **« Kore »** par la tâche GitHub `voix-alphabette.yml`
+   (`scripts/voix/generer-bibliotheque.ts`, quota gratuit de Google) et publiés en
+   MP3 sur `https://alphabette.fr/voix/`. Lecture immédiate, même voix pour tous.
+2. Route serveur `/api/alphabette/tts` (si un serveur existe un jour : `server/alphabetteAudio.ts`).
+3. Clé Gemini du visiteur (réglages IA), gardée en cache sur son appareil.
+4. Sinon la **plus belle voix de l'appareil** (voix naturelles Microsoft, Apple, Google en priorité), fr-FR, 0,94.
+
+Ce que fait une application :
 - Bouton : `<BoutonEcouter texte={…} id="fiche-12" />` ou `<BoutonEcouter cible="#resultat" />`
   — sans React : `<button data-ab-ecouter="Texte">` / `data-ab-ecouter-cible="#bloc"`.
   Trois états : « Écouter » → « Préparation... » (annulable) → « Arrêter » (vert).
-- Ne jamais appeler `speechSynthesis` ni recréer un lecteur : les anciens appels
-  `speechSynthesis.speak()` sont de toute façon redirigés vers la voix Alphabette.
+- Textes fixes cachés derrière un clic (fiches, chapitres, questions) : les lister dans
+  `public/voix-textes.json` (`["texte 1", "texte 2"]`) pour qu'ils soient enregistrés en « Kore ».
 - Le haut-parleur de la barre arrête toute lecture en cours, où qu'elle soit.
-- Serveur : `POST /api/alphabette/tts` et `/api/alphabette/transcribe`
-  (`server/alphabetteAudio.ts`, clé `GEMINI_API_KEY` côté serveur, `apiVersion: v1beta`).
-  Site statique : clé Gemini du visiteur, sinon voix du téléphone (fr-FR, 0,94).
 - Micro : `demarrerDictee()` (SpeechRecognition fr-FR → MediaRecorder + transcription Gemini).
 - Mettre une application existante à jour : `bun run sync:shell <dossier-app>`.

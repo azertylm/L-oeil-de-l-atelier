@@ -93,10 +93,11 @@ export {
 } from './ia/routeurByok';
 
 // Voix Alphabette unique (Google Gemini TTS « Kore ») : lecteur, bouton Écouter, dictée.
-export { alphabetteAudio, ID_BARRE, type EtatAudio, type InstantaneAudio } from './audio/alphabetteAudio';
-export { BoutonEcouter, IconeAudio, useAlphabetteAudio, texteDeLElement, type BoutonEcouterProps } from './audio/BoutonEcouter';
+export { alphabetteAudio, ID_BARRE, meilleureVoix, type EtatAudio, type InstantaneAudio } from './audio/alphabetteAudio';
+export { empreinteVoix, planBibliotheque, partiesEnregistrees, enregistrementsDisponibles, chargerIndexBibliotheque, urlBibliotheque, VERSION_BIBLIOTHEQUE } from './audio/bibliotheque';
+export { BoutonEcouter, IconeAudio, useAlphabetteAudio, texteDeLElement, texteDeLaPage, type BoutonEcouterProps } from './audio/BoutonEcouter';
 export { preparerTexte, decouperTexte, morceauxAPrononcer } from './audio/preparerTexte';
-export { installerAudioAlphabette } from './audio/passerelle';
+export { installerAudioAlphabette, textesAPrononcer } from './audio/passerelle';
 export { demarrerDictee, dicteePossible, transcrire, type Dictee, type OptionsDictee } from './audio/dictee';
 export {
   VOIX_ALPHABETTE, MODELE_TTS, MODELES_TTS_SECOURS, STYLE_VOIX, MODELE_TRANSCRIPTION, MODELES_TRANSCRIPTION_SECOURS,

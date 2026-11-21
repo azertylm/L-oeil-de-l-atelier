@@ -8,10 +8,43 @@
  * Installée une seule fois par <AppShell>. Désactivable : window.ALPHABETTE_AUDIO_PASSERELLE = false.
  */
 import { alphabetteAudio } from './alphabetteAudio';
-import { texteDeLElement } from './BoutonEcouter';
+import { texteDeLaPage, texteDeLElement } from './BoutonEcouter';
+import { ID_BARRE, meilleureVoix } from './alphabetteAudio';
+import { planBibliotheque } from './bibliotheque';
+import { morceauxAPrononcer } from './preparerTexte';
+import { demarrerDictee, dicteePossible } from './dictee';
+
+export type AlphabetteAudioGlobal = typeof alphabetteAudio & {
+  ID_BARRE: string;
+  morceaux: typeof morceauxAPrononcer;
+  texteDe: typeof texteDeLElement;
+  texteDeLaPage: typeof texteDeLaPage;
+  /** Pour la bibliothèque de voix : tous les textes lisibles de la page, avec leurs empreintes. */
+  textesAPrononcer: () => { texte: string; empreinte: string }[];
+  meilleureVoix: typeof meilleureVoix;
+  demarrerDictee: typeof demarrerDictee;
+  dicteePossible: typeof dicteePossible;
+};
+
+/** Textes que la page peut faire lire : page entière, boutons Écouter, blocs ciblés. */
+export function textesAPrononcer(): { texte: string; empreinte: string }[] {
+  const bruts = new Set<string>([texteDeLaPage()]);
+  document.querySelectorAll<HTMLElement>('[data-ab-voix], [data-ab-ecouter]').forEach((el) => {
+    const t = el.dataset.abVoix ?? el.dataset.abEcouter;
+    if (t) bruts.add(t);
+  });
+  document.querySelectorAll<HTMLElement>('[data-ab-voix-cible], [data-ab-ecouter-cible]').forEach((el) => {
+    const sel = el.dataset.abVoixCible ?? el.dataset.abEcouterCible;
+    if (sel) bruts.add(texteDeLElement(document.querySelector(sel)));
+  });
+  const vus = new Map<string, string>();
+  bruts.forEach((b) => planBibliotheque(b).forEach((p) => vus.set(p.empreinte, p.texte)));
+  return [...vus].map(([empreinte, texte]) => ({ empreinte, texte }));
+}
 
 declare global {
   interface Window {
+    alphabetteAudio?: AlphabetteAudioGlobal;
     ALPHABETTE_AUDIO_PASSERELLE?: boolean;
     __abAudioInstalle?: boolean;
   }
@@ -23,6 +56,12 @@ let idAuto = 0;
 export function installerAudioAlphabette() {
   if (typeof window === 'undefined' || window.__abAudioInstalle) return;
   window.__abAudioInstalle = true;
+  if (!window.alphabetteAudio) {
+    window.alphabetteAudio = Object.assign(alphabetteAudio, {
+      ID_BARRE, morceaux: morceauxAPrononcer, texteDe: texteDeLElement, texteDeLaPage, textesAPrononcer,
+      meilleureVoix, demarrerDictee, dicteePossible,
+    });
+  }
   installerDelegation();
   if (window.ALPHABETTE_AUDIO_PASSERELLE !== false) installerPasserelleSpeech();
 }

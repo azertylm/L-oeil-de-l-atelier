@@ -30,11 +30,19 @@ export function useAlphabetteAudio(id?: string) {
 export function texteDeLElement(el: Element | null): string {
   if (!el) return '';
   const copie = el.cloneNode(true) as HTMLElement;
-  copie.querySelectorAll('button, script, style, noscript, [aria-hidden="true"], [data-ab-muet]').forEach((n) => n.remove());
+  copie.querySelectorAll(NON_LUS).forEach((n) => n.remove());
   return ((el as HTMLElement).innerText ? texteVisible(el as HTMLElement) : copie.textContent || '').trim();
 }
+const NON_LUS = 'button, [aria-hidden="true"], [data-ab-muet], #ab-barres, .ab-eco, .ab-bar, script, style, noscript';
+
+/** Texte que lit le haut-parleur de la barre (même calcul dans le navigateur et pour la bibliothèque). */
+export function texteDeLaPage(): string {
+  const zone = (document.querySelector('.ab-content') ?? document.querySelector('main') ?? document.body) as HTMLElement;
+  return texteDeLElement(zone).slice(0, 30000);
+}
+
 function texteVisible(el: HTMLElement): string {
-  const masques = Array.from(el.querySelectorAll<HTMLElement>('button, [aria-hidden="true"], [data-ab-muet]'));
+  const masques = Array.from(el.querySelectorAll<HTMLElement>(NON_LUS));
   const avant = masques.map((m) => m.style.display);
   masques.forEach((m) => (m.style.display = 'none'));
   const t = el.innerText || '';
@@ -75,6 +83,8 @@ export function BoutonEcouter({ texte, cible, id, compact, className, style, lib
       className={`ab-ecouter ab-ecouter--${etat}${compact ? ' ab-ecouter--compact' : ''}${className ? ` ${className}` : ''}`}
       style={style}
       onClick={clic}
+      data-ab-voix={typeof texte === 'string' && texte.length < 20000 ? texte : undefined}
+      data-ab-voix-cible={cible}
       aria-pressed={etat !== 'repos'}
       aria-busy={etat === 'preparation'}
       aria-label={etat === 'preparation' ? `${mots.preparation} (toucher pour annuler)` : mots[etat]}
