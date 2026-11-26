@@ -2,8 +2,8 @@
  * Tarification officielle ALPHABETTE.
  *
  * Règle du jeu (décidée avec le créateur du projet) :
- *  - 15 € par application et par an ;
- *  - 40 € pour tout l'écosystème et par an ;
+ *  - 15 € par application et par an (10 € pour le créateur, 5 € pour Alphabette) ;
+ *  - un seul prix : aucun bouquet, aucun prorata ;
  *  - 7 jours d'essai offerts, clé Mistral Alphabette incluse.
  *
  * Ces valeurs remplacent les anciennes formules (39/59/99/199 €). Le hub les
@@ -14,18 +14,15 @@ export const PRICING = {
   currency: 'EUR',
   /** 15 € / application / an. */
   perAppPerYear: 15,
-  /** 40 € / écosystème complet / an. */
-  ecosystemPerYear: 40,
   /** 7 jours d'essai offerts. */
   trialDays: 7,
 } as const;
 
 /** Liens de paiement par défaut (remplacés par ceux du hub si disponibles). */
-export const DEFAULT_PAYMENT_LINKS: { perApp: string; ecosystem: string } = {
+export const DEFAULT_PAYMENT_LINKS: { perApp: string } = {
   // Vides tant que le hub ne publie pas de vrais liens : la base affiche alors
   // « le paiement en ligne n'est pas encore ouvert » au lieu d'un bouton.
   perApp: '',
-  ecosystem: '',
 };
 
 /** Hub central : source de vérité des tarifs et des liens de paiement. */
@@ -125,10 +122,9 @@ export interface ShellDonation {
 export interface ShellConfig {
   currency: string;
   perAppPerYear: number;
-  ecosystemPerYear: number;
   /** Jours d'essai offerts (7 par défaut). */
   trialDays: number;
-  paymentLinks: { perApp: string; ecosystem: string };
+  paymentLinks: { perApp: string };
   /** Promotion en cours publiée par le hub (facultative). */
   promotion?: ShellPromotion;
   /** Espace dons (RIB + membre fondateur) publié par le hub (facultatif). */
@@ -139,7 +135,6 @@ export interface ShellConfig {
 export const FALLBACK_CONFIG: ShellConfig = {
   currency: PRICING.currency,
   perAppPerYear: PRICING.perAppPerYear,
-  ecosystemPerYear: PRICING.ecosystemPerYear,
   trialDays: PRICING.trialDays,
   paymentLinks: { ...DEFAULT_PAYMENT_LINKS },
 };
@@ -148,7 +143,6 @@ interface HubCommercialConfig {
   currency?: string;
   pricing?: {
     perApp?: number;
-    ecosystem?: number;
     trialDays?: number;
     singleApp?: { byok?: number; managed?: number };
     bouquet?: { byok?: number; managed?: number };
@@ -229,13 +223,9 @@ export async function loadShellConfig(hubUrl: string = HUB_URL): Promise<ShellCo
       currency: data.currency ?? FALLBACK_CONFIG.currency,
       perAppPerYear:
         data.pricing?.perApp ?? data.pricing?.singleApp?.byok ?? FALLBACK_CONFIG.perAppPerYear,
-      ecosystemPerYear:
-        data.pricing?.ecosystem ?? data.pricing?.bouquet?.byok ?? FALLBACK_CONFIG.ecosystemPerYear,
       trialDays: data.pricing?.trialDays ?? FALLBACK_CONFIG.trialDays,
       paymentLinks: {
         perApp: links.perApp ?? links.single_app ?? links.single_byok ?? FALLBACK_CONFIG.paymentLinks.perApp,
-        ecosystem:
-          links.ecosystem ?? links.bouquet_integral ?? links.bouquet ?? FALLBACK_CONFIG.paymentLinks.ecosystem,
       },
       promotion:
         promotion && promotion.isActive

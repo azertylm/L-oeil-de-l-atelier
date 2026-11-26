@@ -14,6 +14,8 @@ export interface Prefs {
   density?: 'normal' | 'large' | 'xlarge';
   lang?: 'fr' | 'en';
   simple?: boolean;
+  /** Mode Calme : aucune animation, aucun bandeau, rien qui s'ouvre tout seul. */
+  calme?: boolean;
   /** Applications épinglées dans la barre (3 au maximum). */
   favoris?: string[];
   /** Nouveautés déjà vues. */

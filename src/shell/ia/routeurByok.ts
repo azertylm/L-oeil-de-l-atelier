@@ -116,6 +116,19 @@ export class ErreurRequeteIA extends Error {
   }
 }
 
+/**
+ * Aucune clé d'IA n'est branchée : ce n'est ni un bug ni un incident, c'est une étape à faire une fois.
+ * Le message reste en français simple (jamais « Requête refusée (0) ») ; l'interface peut afficher l'encart
+ * guidé `EncartIaNonConfiguree` (guideIA.tsx) en reconnaissant `cleManquante`.
+ */
+export class ErreurCleManquante extends Error {
+  readonly cleManquante = true;
+  constructor() {
+    super("Pour utiliser cette fonction, branchez d'abord votre clé Mistral personnelle (gratuite pour essayer) dans les réglages « Clé API ».");
+    this.name = 'ErreurCleManquante';
+  }
+}
+
 /* ------------------------------------------------------------------ */
 
 export function classerStatut(statut: number | null): TypeIncident | null {
@@ -230,7 +243,7 @@ function preparer(m: MaillonIA, r: RequeteIA): Preparee {
 /** Appel avec bascule automatique sur la chaîne de secours configurée par l'utilisateur. */
 export async function appelerIA(requete: RequeteIA, options: OptionsRouteur): Promise<ReponseIA> {
   const chaine = options.chaine.filter((m) => m && m.cle && m.cle.trim());
-  if (!chaine.length) throw new ErreurRequeteIA('mistral', 0, "aucune clé d'IA n'est configurée");
+  if (!chaine.length) throw new ErreurCleManquante();
   const bascules: Bascule[] = [];
   for (let i = 0; i < chaine.length; i++) {
     const m = chaine[i];

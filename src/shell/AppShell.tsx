@@ -3,12 +3,17 @@ import { AppHeader } from './AppHeader';
 import { EcosystemBar } from './EcosystemBar';
 import { InfoBulle } from './InfoBulle';
 import { installerAudioAlphabette } from './audio/passerelle';
-import { plateforme, useFavoris, useInstallation, useLangue, useLectureVocale, useModeSimple, useNouveautes } from './outils';
+import { installerEffets, poserCategorie } from './pop/effets';
+import { plateforme, useFavoris, useModeCalme, useInstallation, useLangue, useLectureVocale, useModeSimple, useNouveautes } from './outils';
+import { demarrerVotes, type ControleVotes } from './labo/votes';
 import { loadEcosystemRegistry, synchroniserSites, type EcosystemApp, type RegistreApps } from './apps';
 import type { AlphaAppConfig, AlphaSite, ShellPanelId } from './config';
 import { useDensity, useFullscreen, useTheme, type ShellDensity, type ShellTheme } from './hooks';
 import { PanneauShell, infosPanneau } from './panels';
 import { ShellOverlay } from './ShellOverlay';
+import { installerMasquageDefilement } from './masquage';
+import { PanneauDebugLocal } from './DebugLocal';
+import { surLeLaboratoire } from './labo/confidentialite';
 import {
   FALLBACK_CONFIG,
   HUB_URL,
@@ -89,8 +94,27 @@ export function AppShell({
   const { langue, setLangue, t } = useLangue();
   const { favoris, basculer: basculerFavori } = useFavoris();
   const { simple, basculer: basculerSimple } = useModeSimple();
+  const { calme, basculer: basculerCalme } = useModeCalme();
+  const [votes, setVotes] = useState<ControleVotes | null>(null);
+  const voteId = app.voteId;
+  // Avis des applis de créateurs : bandeau discret après 30 s d'usage actif, jamais à l'ouverture, jamais en Mode Calme.
+  useEffect(() => {
+    if (!voteId || typeof document === 'undefined') return undefined;
+    const controle = demarrerVotes({ appId: voteId });
+    setVotes(controle);
+    return () => {
+      controle.detruire();
+      setVotes(null);
+    };
+  }, [voteId]);
   const lecture = useLectureVocale(langue);
   useEffect(() => installerAudioAlphabette(), []);
+  // Design Pop / Néon : univers .eu/.fr, Mode Calme, cartes 3D, ripple (rien de visible au démarrage).
+  useEffect(() => installerEffets(), []);
+  useEffect(() => poserCategorie(app.categorie), [app.categorie]);
+  // Règle d'or 2 : en descendant dans le contenu, la double barre (et la Météo du Labo) se masque ; elle revient dès qu'on remonte.
+  // Réservé à alphabette.eu (la vitrine .fr garde sa présentation) ; le Mode Calme ne change rien : c'est déjà plus calme.
+  useEffect(() => (surLeLaboratoire() ? installerMasquageDefilement() : undefined), []);
   const installation = useInstallation();
   const [remoteConfig, setRemoteConfig] = useState<ShellConfig>(config ?? FALLBACK_CONFIG);
   const [panel, setPanel] = useState<ShellPanelId | null>(null);
@@ -231,6 +255,9 @@ export function AppShell({
       marquerNouveautesVues: marquerVues,
       simple,
       basculerSimple,
+      calme,
+      basculerCalme,
+      noter: votes ? votes.ouvrir : undefined,
       lecture,
       installation: { installee: installation.installee, directe: installation.directe, installer: installation.installer, plateforme: plateforme() },
       donnerAvis: () => {
@@ -274,6 +301,9 @@ export function AppShell({
     marquerVues,
     simple,
     basculerSimple,
+    calme,
+    basculerCalme,
+    votes,
     lecture,
     installation,
     resolvedHubUrl,
@@ -295,11 +325,21 @@ export function AppShell({
         data-ab-density={density}
         style={app.accent ? ({ '--ab-accent': app.accent } as CSSProperties) : undefined}
       >
-        <EcosystemBar app={app} sites={sitesFinaux} hubUrl={resolvedHubUrl} apps={apps} />
-        <AppHeader app={app} onToggleNav={onToggleNav} />
+        <div className="ab-barres" data-masquer="defilement">
+          <EcosystemBar app={app} sites={sitesFinaux} hubUrl={resolvedHubUrl} apps={apps} />
+          <AppHeader app={app} onToggleNav={onToggleNav} />
+        </div>
         <div className="ab-content" role="region" aria-label={app.name}>
           {children}
         </div>
+
+        <footer className="ab-pied no-print" aria-label="Informations légales">
+          <a href={`${resolvedHubUrl}/mentions-legales.html`} target="_blank" rel="noopener noreferrer">Mentions légales</a>
+          <a href={`${resolvedHubUrl}/confidentialite.html`} target="_blank" rel="noopener noreferrer">Confidentialité</a>
+          <a href={`${resolvedHubUrl}/cgv.html`} target="_blank" rel="noopener noreferrer">CGV</a>
+        </footer>
+
+        <PanneauDebugLocal />
 
         {isImmersion && (
           <button type="button" className="ab-sortie-immersion" onClick={toggleFullscreen}>

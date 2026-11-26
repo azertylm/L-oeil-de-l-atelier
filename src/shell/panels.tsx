@@ -1,6 +1,8 @@
 import { ADRESSE_INSCRIPTION, LIBELLE_ROLE, dateLisible, lienInscription, lireMembre } from './membre';
+import { ReglagesLabo } from './ReglagesLabo';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { MOTIFS_SIGNALEMENT, envoyerSignalement } from './labo/votes';
 import { useShell } from './ShellContext';
 import type { EcosystemApp } from './apps';
 import type { AlphaAppConfig, ShellStatus } from './config';
@@ -18,12 +20,15 @@ import type { ShellPanelId } from './config';
 export const SHELL_PANELS: Record<ShellPanelId, { titre: string; sousTitre: string; icone: ReactNode }> = {
   compte: { titre: 'Mon inscription alphabette', sousTitre: 'Gratuite avec un code d’invitation, pour toutes les applications', icone: '👤' },
   cles: { titre: 'Clé d’API — IA souveraine', sousTitre: 'Mistral AI, hébergé en France', icone: '🔑' },
-  pass: { titre: 'Le Pass alphabette', sousTitre: 'Débloquer les applications', icone: '⭐' },
+  pass: { titre: 'L’abonnement alphabette', sousTitre: 'Débloquer les applications', icone: '⭐' },
   sites: { titre: 'Les applications de l’écosystème', sousTitre: 'Registre central alphabette.fr', icone: '🧭' },
   dons: { titre: 'Soutenir alphabette.fr', sousTitre: 'Sans publicité, sans revente de données', icone: '♥' },
   nouveautes: { titre: 'Les nouveautés', sousTitre: 'Les dernières applications et les derniers jeux', icone: '🆕' },
   langue: { titre: 'Langue', sousTitre: 'Français ou English', icone: '🌍' },
   installer: { titre: 'Installer sur mon téléphone', sousTitre: 'L’appli à portée de doigt, sans magasin d’applications', icone: '📲' },
+  signaler: { titre: 'Signaler un problème ou un abus', sousTitre: 'Nous lisons chaque signalement sans délai', icone: '🚩' },
+  publier: { titre: 'Publier une appli', sousTitre: 'En 60 secondes · gagnez 10 € par an et par abonnement', icone: '🛠️' },
+  inviter: { titre: 'Inviter un ami', sousTitre: 'Un lien à partager, rien d’autre', icone: '🎁' },
 };
 
 /**
@@ -150,6 +155,7 @@ function PanneauCompte({ apps, ouvrir, basculer }: PanneauProps) {
   if (membre) {
     return (
       <>
+        <ReglagesLabo />
         <div className="ab-panneau">
           <h4>👤 {membre.prenom}</h4>
           <p>
@@ -178,6 +184,7 @@ function PanneauCompte({ apps, ouvrir, basculer }: PanneauProps) {
   }
   return (
     <>
+      <ReglagesLabo />
       <div className="ab-panneau">
         <h4>Vous n’êtes pas encore inscrit(e)</h4>
         <p>
@@ -216,40 +223,35 @@ function PanneauCles({ app, config, hubUrl, ouvrir, basculer }: PanneauProps) {
       </div>
 
       <div className="ab-panneau">
-        <h4>Deux façons de brancher l’IA</h4>
+        <h4>Deux façons d’utiliser l’IA</h4>
         <p>
-          <IconCheck width={13} height={13} /> <strong>BYOK</strong> : tu apportes ta propre clé Mistral, tu gardes la
-          main sur tes quotas et ta facturation.
+          <IconCheck width={13} height={13} /> <strong>Avec ta propre clé</strong> : tu crées une clé gratuite chez
+          Mistral (société française) et tu la colles ici, une seule fois. Tu gardes la main sur ce que tu consommes.
         </p>
         <p>
-          <IconSparkles width={13} height={13} /> <strong>Clé managée Alphabette</strong> :{' '}
+          <IconSparkles width={13} height={13} /> <strong>Avec la clé d’Alphabette</strong> :{' '}
           {app.gratuit
-            ? 'hébergée par l’écosystème, rien à configurer.'
-            : `incluse pendant les ${config.trialDays} jours d’essai et avec le Pass. Rien à configurer.`}
+            ? 'rien à faire, elle est fournie par l’écosystème.'
+            : `rien à faire, elle est incluse pendant les ${config.trialDays} jours d’essai et avec l’abonnement.`}
         </p>
       </div>
 
       <div className="ab-panneau">
-        <h4>Ce que fait la base</h4>
+        <h4>Où va ma clé ?</h4>
         <p className="ab-note">
-          Les appels passent par le routeur souverain du hub (<code>{hubUrl.replace(/\/$/, '')}/api/ai/ask</code>), qui
-          choisit le fournisseur disponible et journalise le minimum. Aucune clé n’est stockée dans le navigateur.
+          Ta clé reste sur ton appareil, dans ton navigateur. Elle n’est envoyée qu’à ton fournisseur d’IA, jamais à
+          Alphabette. Tu peux l’effacer quand tu veux.
         </p>
       </div>
 
       <div className="ab-actions-ligne">
         <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" onClick={() => ouvrir(cles)}>
-          Gérer mes clés <IconExternal width={14} height={14} />
+          Ajouter ma clé <IconExternal width={14} height={14} />
         </button>
         <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => basculer('pass')}>
-          {app.gratuit ? '🧭 L’écosystème' : '⭐ Incluse dans le Pass'}
+          {app.gratuit ? '🧭 L’écosystème' : '⭐ Voir l’abonnement'}
         </button>
       </div>
-
-      <p className="ab-note">
-        Adresse de gestion : <strong>{cles}</strong>. Remplaçable par la prop <code>onOpenApiKeys</code> ou en
-        surchargeant le panneau.
-      </p>
     </>
   );
 }
@@ -300,9 +302,8 @@ function PanneauGratuit({ app, config, apps, hubUrl, ouvrir, basculer }: Panneau
             </>
           )}
           {gratuites === 0 && <>Les autres applications se débloquent avec le Pass : </>}
-          <strong>{euros(config.perAppPerYear)} / an</strong> pour une application,{' '}
-          <strong>{euros(config.ecosystemPerYear)} / an</strong> pour tout l’écosystème. C’est ce qui finance, entre
-          autres, les applications gratuites comme celle-ci.
+          <strong>{euros(config.perAppPerYear)} / an</strong> par application, dont 10 € pour son créateur. C’est ce qui
+          finance, entre autres, les applications gratuites comme celle-ci.
         </p>
         <p className="ab-note">
           Les prix viennent du hub (<code>/api/config.json</code>) et les applications gratuites du registre
@@ -328,7 +329,7 @@ const LIEN_CADEAU = 'https://alphabette.eu/pass/#cadeau';
 function PanneauPass(props: PanneauProps) {
   if (props.app.gratuit) return <PanneauGratuit {...props} />;
   const { config, ouvrir, basculer } = props;
-  const ouvert = paiementOuvert(config.paymentLinks.perApp) && paiementOuvert(config.paymentLinks.ecosystem);
+  const ouvert = paiementOuvert(config.paymentLinks.perApp);
   const promo = ouvert ? config.promotion : undefined;
   const membre = lireMembre();
   return (
@@ -359,7 +360,7 @@ function PanneauPass(props: PanneauProps) {
         <div className="ab-panneau">
           <h4>Le paiement en ligne n’est pas encore ouvert</h4>
           <p>
-            Aujourd’hui, les applications s’utilisent librement. Voici les tarifs prévus pour le Pass. D’ici là, tu
+            Aujourd’hui, les applications s’utilisent librement. Voici le tarif prévu pour l’abonnement. D’ici là, tu
             peux soutenir le projet par un don.
           </p>
         </div>
@@ -387,34 +388,14 @@ function PanneauPass(props: PanneauProps) {
           </ul>
           {ouvert && (
             <button type="button" className="ab-btn ab-btn--ghost ab-btn--lg" onClick={() => ouvrir(config.paymentLinks.perApp)}>
-              Débloquer une application
-            </button>
-          )}
-        </div>
-
-        <div className="ab-offre ab-offre--vedette">
-          <span className="ab-etiquette ab-etiquette--pass">Tout compris</span>
-          <span className="ab-offre__prix">
-            {euros(config.ecosystemPerYear)} <small>/ an</small>
-          </span>
-          <ul>
-            <li><strong>Tout l’écosystème</strong>, applications présentes et futures</li>
-            <li>{config.trialDays} jours d’essai avant de payer</li>
-          </ul>
-          {ouvert && (
-            <button
-              type="button"
-              className="ab-btn ab-btn--pass ab-btn--lg"
-              onClick={() => ouvrir(config.paymentLinks.ecosystem)}
-            >
-              <IconStar width={14} height={14} /> Prendre le Pass {euros(config.ecosystemPerYear)}/an
+              Abonnement {euros(config.perAppPerYear)}/an
             </button>
           )}
         </div>
       </div>
 
       <div className="ab-panneau">
-        <h4>Ce que finance le Pass</h4>
+        <h4>Ce que finance l’abonnement</h4>
         <p className="ab-note">
           Les applications, leur hébergement et leurs évolutions, y compris celles qui restent gratuites. Pas de
           publicité, pas de revente de données.
@@ -998,6 +979,117 @@ function PanneauInstaller() {
   );
 }
 
+/** Racine du service « Créateurs » : même origine sur alphabette.eu, adresse complète ailleurs (le service accepte les sous-domaines alphabette). */
+function apiCreateurs(): string {
+  return typeof location !== 'undefined' && /(^|\.)alphabette\.eu$/.test(location.hostname) ? '/api/createurs/' : 'https://alphabette.eu/api/createurs/';
+}
+
+function PanneauSignaler({ app }: PanneauProps) {
+  const [motif, setMotif] = useState('bug');
+  const [details, setDetails] = useState('');
+  const [contact, setContact] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const [retour, setRetour] = useState<{ ok: boolean; message: string } | null>(null);
+  const envoyer = async () => {
+    setEnvoi(true);
+    const r = await envoyerSignalement(app.voteId ?? app.key, motif, details, contact, apiCreateurs());
+    setRetour(r);
+    setEnvoi(false);
+  };
+  return (
+    <div className="ab-panneau">
+      <h4>Que se passe-t-il sur « {app.name} » ?</h4>
+      {retour?.ok ? (
+        <p role="status">{retour.message}</p>
+      ) : (
+        <>
+          <label className="ab-champ">
+            <span>Motif</span>
+            <select value={motif} onChange={(e) => setMotif(e.target.value)}>
+              {Object.entries(MOTIFS_SIGNALEMENT).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+          </label>
+          <label className="ab-champ">
+            <span>Décrivez le problème</span>
+            <textarea value={details} maxLength={1000} rows={4} onChange={(e) => setDetails(e.target.value)} />
+          </label>
+          <label className="ab-champ">
+            <span>Votre e-mail (facultatif, pour vous répondre)</span>
+            <input type="email" value={contact} maxLength={120} onChange={(e) => setContact(e.target.value)} />
+          </label>
+          <div className="ab-actions-ligne">
+            <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" disabled={envoi || details.trim().length < 5} onClick={() => void envoyer()}>
+              Envoyer le signalement
+            </button>
+          </div>
+          {retour && !retour.ok && <p className="ab-note ab-note--warn" role="alert">{retour.message}</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
+function PanneauPublier() {
+  const { openExternal } = useShell();
+  return (
+    <>
+      <div className="ab-panneau">
+        <h4>Votre appli sur alphabette.eu, en 60 secondes</h4>
+        <p>Déposez un fichier .html, une archive .zip ou le lien d’un dépôt GitHub public. Nous lisons le titre et le README pour remplir la fiche à votre place.</p>
+        <ul style={{ paddingLeft: '1.2rem', display: 'grid', gap: '0.4rem' }}>
+          <li>Après validation, votre appli entre dans le Laboratoire, avec le badge « Pionnier » pour les 50 premières.</li>
+          <li>Avec 10 avis positifs et 75 % d’avis favorables, elle peut passer sur alphabette.fr : abonnement de 15 € par an, dont 10 € pour vous.</li>
+          <li>Votre appli s’exécute isolée du reste d’Alphabette ; elle évolue ensuite avec la communauté, la version d’origine restant archivée.</li>
+        </ul>
+        <div className="ab-actions-ligne">
+          <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" onClick={() => openExternal('https://alphabette.eu/soumettre/')}>
+            Publier mon appli <IconExternal width={14} height={14} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PanneauInviter({ app }: PanneauProps) {
+  const [copie, setCopie] = useState(false);
+  const lien = typeof location !== 'undefined' ? `${location.origin}${location.pathname}` : 'https://alphabette.fr';
+  const texte = `Je te recommande « ${app.name} » sur Alphabette : ${lien}`;
+  const partager = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share({ title: app.name, text: `Je te recommande « ${app.name} » sur Alphabette`, url: lien });
+        return;
+      }
+    } catch {
+      return; // partage annulé par la personne
+    }
+    try {
+      await navigator.clipboard.writeText(texte);
+      setCopie(true);
+    } catch {
+      setCopie(false);
+    }
+  };
+  return (
+    <div className="ab-panneau">
+      <h4>Faire connaître « {app.name} »</h4>
+      <p>Un message prêt à envoyer, sans compte ni suivi :</p>
+      <p className="ab-note">{texte}</p>
+      <div className="ab-actions-ligne">
+        <button type="button" className="ab-btn ab-btn--accent ab-btn--lg" onClick={() => void partager()}>
+          {copie ? <IconCheck width={14} height={14} /> : <IconCopy width={14} height={14} />} {copie ? 'Message copié' : 'Partager ou copier'}
+        </button>
+        <a className="ab-btn ab-btn--ghost ab-btn--lg" href={`mailto:?subject=${encodeURIComponent(`Alphabette : ${app.name}`)}&body=${encodeURIComponent(texte)}`}>
+          Par e-mail
+        </a>
+      </div>
+    </div>
+  );
+}
+
 /** Rend le panneau demandé. */
 export function PanneauShell({ id, ...props }: PanneauProps & { id: ShellPanelId }) {
   switch (id) {
@@ -1017,6 +1109,12 @@ export function PanneauShell({ id, ...props }: PanneauProps & { id: ShellPanelId
       return <PanneauLangue />;
     case 'installer':
       return <PanneauInstaller />;
+    case 'signaler':
+      return <PanneauSignaler {...props} />;
+    case 'publier':
+      return <PanneauPublier />;
+    case 'inviter':
+      return <PanneauInviter {...props} />;
     default:
       return null;
   }

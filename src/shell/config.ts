@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export type ShellStatus = 'ok' | 'loading' | 'off';
 
 /** Les cinq panneaux que la base sait ouvrir par-dessus le contenu. */
-export type ShellPanelId = 'compte' | 'cles' | 'pass' | 'sites' | 'dons' | 'nouveautes' | 'langue' | 'installer';
+export type ShellPanelId = 'compte' | 'cles' | 'pass' | 'sites' | 'dons' | 'nouveautes' | 'langue' | 'installer' | 'signaler' | 'publier' | 'inviter';
 
 export interface AlphaSite {
   /** Identifiant technique. */
@@ -39,6 +39,11 @@ export interface AlphaAppConfig {
    * (barre écosystème, boutons actifs, titre). Ex. « #2563eb ».
    */
   accent?: string;
+  /**
+   * Catégorie de l'application (« Vie pratique », « Éducation », « Jeux », « Création »,
+   * « Productivité », « Communauté », « Labo ») : colore le liseré lumineux de la double barre.
+   */
+  categorie?: string;
   /** Sous-domaine dédié (ex. « infosperso » → infosperso.alphabette.fr). */
   subdomain?: string;
   /** Chemin sur le domaine principal (ex. « /infos-perso »). */
@@ -82,6 +87,11 @@ export interface AlphaAppConfig {
   panels?: Partial<Record<ShellPanelId, ReactNode>>;
   /** Pictogramme de l'application (emoji ou composant). */
   icon?: ReactNode;
+  /**
+   * Identifiant d'une appli de créateur (« c-1a2b3c4d », alphabette.eu) : active le bandeau d'avis (30 s d'usage actif)
+   * et l'entrée « Noter cette appli » du menu ⋯. Absent = aucune requête d'avis.
+   */
+  voteId?: string;
 }
 
 /** Valeurs par défaut d'une application (utilisées par le générateur). */

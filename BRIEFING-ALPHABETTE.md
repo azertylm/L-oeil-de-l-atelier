@@ -35,7 +35,7 @@ briefing, signale-le et demande confirmation au lieu d'improviser.
 ═════════════════════════════════════════════════════════════════════════
 
 Contenu, de gauche à droite :
-  ◉ ALPHABETTE   ♥ DON   [5 sites]   (x/y) applications   ⭐ Pass 40 €/an
+  ◉ ALPHABETTE   ♥ DON   [5 sites]   (x/y) applications   ⭐ Abonnement 15 €/an
   (code : EcosystemBar.tsx)
 
 Comportements garantis — ce sont eux qui rendent la barre « efficace » :
@@ -56,9 +56,9 @@ Comportements garantis — ce sont eux qui rendent la barre « efficace » :
 - ♥ DON ouvre le panneau dons de la base (RIB copiable, virement SEPA,
   « Membre fondateur »). Les coordonnées sont publiées par le HUB via
   /api/config.json : NE JAMAIS coder un IBAN dans une application.
-- ⭐ Pass 40 €/an ouvre le panneau tarifaire ; les tarifs et liens Stripe
+- ⭐ Abonnement 15 €/an ouvre le panneau tarifaire ; les tarifs et liens Stripe
   viennent de /api/config.json du hub (défauts intégrés : 15 €/app/an,
-  40 € écosystème/an, 7 jours d'essai).
+  10 € pour le créateur, 7 jours d'essai).
 
 Les 5 sites mis en avant + leurs emojis sont concentrés à UN SEUL endroit
 (DEFAULT_SITES dans la base) ; leurs URLs se mettent à jour tout seuls avec le
@@ -115,7 +115,7 @@ CSS --ab-* de la base. NE JAMAIS coder une couleur en dur dans une application.
 
   compte  → utilisateur, synchronisé avec alphabette.fr/compte
   cles    → clés d'API IA (BYOK / clé managée), IA souveraine Mistral AI
-  pass    → tarifs 15 €/app/an · 40 € écosystème/an · 7 jours d'essai, + promo
+  pass    → tarifs 15 €/app/an · 7 jours d'essai, + promo
   sites   → REGISTRE complet des applications (« Tu es ici » marqué)
   dons    → RIB copiable, virement SEPA, Membre fondateur
 

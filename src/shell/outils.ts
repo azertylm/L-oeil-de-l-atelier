@@ -71,6 +71,25 @@ export function useModeSimple() {
   return { simple, basculer };
 }
 
+/* ------------------------------------------------------------- Mode Calme */
+
+/** Mode Calme : animations coupées, aucun bandeau d'avis, rien ne s'ouvre tout seul (attribut `data-ab-calme` sur <html>). */
+export function useModeCalme() {
+  const [calme, setCalme] = useState<boolean>(() => lirePrefs().calme === true);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (calme) document.documentElement.setAttribute('data-ab-calme', 'oui');
+    else document.documentElement.removeAttribute('data-ab-calme');
+  }, [calme]);
+  const basculer = useCallback(() => {
+    setCalme((prev) => {
+      ecrirePrefs({ calme: !prev });
+      return !prev;
+    });
+  }, []);
+  return { calme, basculer };
+}
+
 /* -------------------------------------------------- Lecture à voix haute */
 
 /**

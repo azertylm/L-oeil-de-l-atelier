@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import type { AlphaAppConfig } from './config';
-import { DENSITY_LABELS, DENSITY_ORDER } from './hooks';
+import { DENSITY_LABELS, DENSITY_ORDER, appliquerThemeAuDocument } from './hooks';
+import { vagueTheme } from './pop/effets';
 import { useShell } from './ShellContext';
 import { IconeAudio } from './audio/BoutonEcouter';
 
@@ -108,7 +110,14 @@ export function AppHeader({ app, onToggleNav }: AppHeaderProps) {
         <button
           type="button"
           className="ab-pico ab-pico--theme"
-          onClick={sh.toggleTheme}
+          onClick={(e) => {
+            // Onde circulaire depuis le bouton (repli : fondu 300 ms ; Mode Calme : instantané).
+            const suivant = nuit ? 'jour' : 'nuit';
+            vagueTheme(e.currentTarget, () => {
+              appliquerThemeAuDocument(suivant);
+              flushSync(sh.toggleTheme);
+            });
+          }}
           data-ab-tip={nuit ? t('Passer en mode jour') : t('Passer en mode nuit')}
           aria-label={nuit ? t('Passer en mode jour') : t('Passer en mode nuit')}
         >
@@ -121,10 +130,12 @@ export function AppHeader({ app, onToggleNav }: AppHeaderProps) {
             className={`ab-pico ab-pico--audio${sh.lecture.enCours ? ' ab-pico--actif' : ''}`}
             onClick={sh.lecture.basculer}
             aria-busy={sh.lecture.preparation}
+            data-ab-audio-etat={sh.lecture.preparation ? 'preparation' : sh.lecture.enCours ? 'lecture' : 'repos'}
             data-ab-tip={sh.lecture.preparation ? t('Préparation... (toucher pour annuler)') : sh.lecture.enCours ? t('Arrêter la lecture') : t('Lire à voix haute')}
             aria-label={sh.lecture.preparation ? t('Préparation... (toucher pour annuler)') : sh.lecture.enCours ? t('Arrêter la lecture') : t('Lire à voix haute')}
           >
             <IconeAudio etat={sh.lecture.preparation ? 'preparation' : sh.lecture.enCours ? 'lecture' : 'repos'} taille={18} />
+            <span className="ab-egaliseur" aria-hidden="true"><i /><i /><i /><i /></span>
           </button>
         )}
 
@@ -149,6 +160,11 @@ export function AppHeader({ app, onToggleNav }: AppHeaderProps) {
                 if (!(await sh.installation.installer())) sh.openPanel('installer');
               })}
             {entree('💬', t('Donner mon avis'), sh.donnerAvis)}
+            {sh.noter && entree('★', t('Noter cette appli'), sh.noter)}
+            {entree('🚩', t('Signaler un problème / abus'), () => sh.openPanel('signaler'))}
+            {entree('🛠️', t('Publier une appli (Gagnez 10 €/an)'), () => sh.openPanel('publier'))}
+            {entree('🎁', t('Inviter un ami'), () => sh.openPanel('inviter'))}
+            {entree('🕊️', t('Mode Calme'), sh.basculerCalme, sh.calme)}
             {entree('🖨️', t('Imprimer'), sh.imprimer)}
             {entree('🌍', t('Langue'), () => sh.openPanel('langue'))}
             {entree('👤', t('Mon compte'), sh.openAccount)}

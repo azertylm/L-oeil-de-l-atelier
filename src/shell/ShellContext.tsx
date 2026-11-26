@@ -51,6 +51,11 @@ export interface ShellContextValue {
   marquerNouveautesVues: () => void;
   simple: boolean;
   basculerSimple: () => void;
+  /** Mode Calme : pas d'animation, pas de bandeau, rien d'automatique. */
+  calme: boolean;
+  basculerCalme: () => void;
+  /** Ouvre le bandeau d'avis (raccourci « Noter cette appli ») ; absent si l'appli n'est pas une appli de créateur. */
+  noter?: () => void;
   /** Lecture à voix haute (lecteur audio unique Alphabette). */
   lecture: { possible: boolean; enCours: boolean; preparation: boolean; basculer: () => void };
   installation: { installee: boolean; directe: boolean; installer: () => Promise<boolean>; plateforme: Plateforme };

@@ -8,6 +8,8 @@ export type Langue = 'fr' | 'en';
 const EN: Record<string, string> = {
   'Aller sur alphabette.fr': 'Go to alphabette.fr',
   'Toutes les applis': 'All apps',
+  'Laboratoire': 'Lab',
+  'Laboratoire d’Octet : tester et proposer des idées': 'Octet’s Lab: test apps and suggest ideas',
   'Nouveautés': 'What’s new',
   'S’abonner': 'Subscribe',
   'Mon inscription': 'My membership',
@@ -35,6 +37,11 @@ const EN: Record<string, string> = {
   'Quitter le plein écran': 'Leave full screen',
   'Mes favoris': 'My favorites',
   'Fermer': 'Close',
+  'Noter cette appli': 'Rate this app',
+  'Signaler un problème / abus': 'Report a problem / abuse',
+  'Publier une appli (Gagnez 10 €/an)': 'Publish an app (Earn €10/year)',
+  'Inviter un ami': 'Invite a friend',
+  'Mode Calme': 'Calm mode',
 };
 
 export function traduire(texte: string, langue: Langue): string {

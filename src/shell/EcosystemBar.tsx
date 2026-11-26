@@ -3,6 +3,8 @@ import type { AlphaAppConfig, AlphaSite } from './config';
 import type { EcosystemApp } from './apps';
 import { useShell } from './ShellContext';
 import { lireMembre, type Membre } from './membre';
+import { MeteoPastille } from './MeteoPastille';
+import { surLeLaboratoire } from './labo/confidentialite';
 
 /** L'inscription de ce navigateur, relue quand on revient sur l'onglet. */
 function useMembre(): Membre | null {
@@ -42,6 +44,7 @@ interface EcosystemBarProps {
 export function EcosystemBar({ app, hubUrl, apps }: EcosystemBarProps) {
   const { t, favoris, nouveautesNonVues, openPanel, openPayment } = useShell();
   const membre = useMembre();
+  const [octetOk, setOctetOk] = useState(true);
   const favorisApps = favoris
     .map((cle) => apps.find((a) => a.key === cle))
     .filter((a): a is EcosystemApp => Boolean(a));
@@ -81,6 +84,19 @@ export function EcosystemBar({ app, hubUrl, apps }: EcosystemBarProps) {
         {nouveautesNonVues > 0 && <span className="ab-eco__point" aria-hidden="true" />}
       </button>
 
+      {/* Laboratoire d'Octet : depuis alphabette.fr il mène à alphabette.eu (tester et proposer des idées) ; sur .eu il ouvre la section d'idées. */}
+      <a
+        className={`ab-eco__icone ab-eco__labo${octetOk ? '' : ' ab-eco__labo--txt'}`}
+        href={surLeLaboratoire() ? '/#idees' : 'https://alphabette.eu/#idees'}
+        data-ab-tip={t('Laboratoire d’Octet : tester et proposer des idées')}
+        aria-label={t('Laboratoire d’Octet : tester et proposer des idées')}
+      >
+        {octetOk && (
+          <img className="ab-eco__octet" src="https://alphabette.fr/assets/octet/octet-icone.webp" alt="" width={28} height={28} decoding="async" aria-hidden="true" onError={() => setOctetOk(false)} />
+        )}
+        <span className="ab-eco__labo-txt">{t('Laboratoire')}</span>
+      </a>
+
       <nav className="ab-eco__favoris" aria-label={t('Mes favoris')}>
         {favorisApps.map((fav) =>
           fav.key === app.key || !fav.url ? (
@@ -96,6 +112,8 @@ export function EcosystemBar({ app, hubUrl, apps }: EcosystemBarProps) {
       </nav>
 
       <div className="ab-eco__right">
+        {/* Météo du Labo : uniquement sur alphabette.eu (jamais sur alphabette.fr). */}
+        {surLeLaboratoire() && <MeteoPastille />}
         {membre ? (
           <button
             type="button"
